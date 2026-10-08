@@ -218,3 +218,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Kovoit
+media/
+staticfiles/
+schema.yml
+
+#fichier env 
+
+.env prive/
+*.sqlite3
