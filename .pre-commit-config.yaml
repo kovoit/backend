@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: limite-200-lignes
+        name: Limite de 200 lignes par fichier
+        entry: python scripts/check_file_length.py
+        language: system
+        pass_filenames: false
+        types: [python]

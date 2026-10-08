@@ -1,0 +1,18 @@
+[project]
+name = "kovoit-backend"
+version = "0.1.0"
+description = "API backend Kovoit — covoiturage urbain à Lomé"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/**", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "SIM"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "kovoit.settings"
+python_files = ["test_*.py"]
+addopts = "-q"

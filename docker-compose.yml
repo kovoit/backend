@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: kovoit
+      POSTGRES_USER: kovoit
+      POSTGRES_PASSWORD: kovoit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kovoit -d kovoit"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - path: .env
+        required: false
+    environment: &docker-env
+      DATABASE_URL: postgres://kovoit:kovoit@db:5432/kovoit
+      CACHE_URL: rediscache://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    build: .
+    command: celery -A kovoit worker -l info
+    env_file:
+      - path: .env
+        required: false
+    environment: *docker-env
+    volumes:
+      - .:/app
+    depends_on: [db, redis]
+
+  beat:
+    build: .
+    command: celery -A kovoit beat -l info
+    env_file:
+      - path: .env
+        required: false
+    environment: *docker-env
+    volumes:
+      - .:/app
+    depends_on: [db, redis]
+
+volumes:
+  pgdata:

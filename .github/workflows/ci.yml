@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  qualite:
+    name: Qualité (ruff + 200 lignes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Lint
+        run: ruff check --output-format=github .
+
+      - name: Formatage
+        run: ruff format --check .
+
+      - name: Limite de 200 lignes par fichier
+        run: python scripts/check_file_length.py
+
+  tests:
+    name: Tests (PostGIS + Redis)
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: kovoit
+          POSTGRES_USER: kovoit
+          POSTGRES_PASSWORD: kovoit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kovoit -d kovoit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    env:
+      DJANGO_DEBUG: "True"
+      DJANGO_SECRET_KEY: cle-ci-non-secrete
+      DATABASE_URL: postgres://kovoit:kovoit@localhost:5432/kovoit
+      CACHE_URL: rediscache://localhost:6379/1
+      CELERY_BROKER_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Installer GDAL (GeoDjango)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Migrations à jour
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Migrations applicables
+        run: python manage.py migrate --noinput
+
+      - name: Contrôles de sécurité (réglages prod)
+        env:
+          DJANGO_DEBUG: "False"
+          DJANGO_SECRET_KEY: ${{ github.run_id }}-cle-ci-suffisamment-longue-pour-le-controle-deploy-0123456789
+          DJANGO_ALLOWED_HOSTS: api.kovoit.tg
+        run: python manage.py check --deploy --fail-level WARNING
+
+      - name: Schéma OpenAPI valide
+        run: python manage.py spectacular --file schema.yml --validate --fail-on-warn
+
+      - name: Tests et couverture
+        run: pytest --cov=apps --cov-report=term-missing --cov-report=xml --cov-fail-under=90
+
+      - name: Publier le rapport de couverture et le schéma
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports
+          path: |
+            coverage.xml
+            schema.yml
+          if-no-files-found: ignore
+
+  docker:
+    name: Build de l'image Docker
+    needs: [qualite, tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construire l'image prod (sans la publier)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
