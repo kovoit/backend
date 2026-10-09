@@ -23,6 +23,24 @@ class JetonsSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
 
+class UtilisateurResumeSerializer(serializers.Serializer):
+    """Identité courte avec coordonnées : réservé aux vues du back-office."""
+
+    id = serializers.UUIDField()
+    email = serializers.EmailField()
+    nom = serializers.CharField()
+    prenom = serializers.CharField()
+    telephone = serializers.CharField()
+
+
+class AdminResumeSerializer(serializers.Serializer):
+    """Administrateur ayant traité un dossier, un signalement ou modifié un paramètre."""
+
+    id = serializers.UUIDField()
+    nom = serializers.CharField()
+    prenom = serializers.CharField()
+
+
 class StatutsKycSerializer(serializers.Serializer):
     passager = serializers.CharField()
     conducteur = serializers.CharField()
@@ -81,9 +99,3 @@ class UtilisateurAdminSerializer(ProfilSerializer):
     class Meta(ProfilSerializer.Meta):
         fields = [*ProfilSerializer.Meta.fields, "is_staff", "cree_le", "last_login"]
         read_only_fields = fields
-
-
-class SuspensionSerializer(serializers.Serializer):
-    jours = serializers.IntegerField(
-        min_value=1, required=False, help_text="Durée en jours. Vide : sans limite."
-    )

@@ -1,7 +1,7 @@
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN, CONNECTE, CompteActif
+from apps.accounts.api.permissions import CONNECTE, CompteActif
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 from apps.kyc.api.permissions import PeutPublier
@@ -109,23 +109,3 @@ class AnnulerVue(APIView):
     def post(self, request, pk):
         trajet = services.annuler(request.user, pk)
         return succes("Trajet annulé.", s.TrajetConducteurSerializer(trajet).data)
-
-
-class TrajetAdminListeVue(APIView):
-    permission_classes = ADMIN
-
-    @extend_schema(
-        tags=["admin - trajets"],
-        summary="Lister les trajets",
-        parameters=[
-            OpenApiParameter(
-                "statut", str, enum=["publie", "complet", "en_cours", "termine", "annule"]
-            )
-        ],
-        responses=s.TrajetConducteurSerializer(many=True),
-    )
-    def get(self, request):
-        trajets = services.lister_trajets(request.query_params.get("statut"))
-        return reponse_paginee(
-            request, trajets, s.TrajetConducteurSerializer, "Trajets récupérés.", self
-        )

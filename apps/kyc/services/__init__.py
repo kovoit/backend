@@ -1,5 +1,6 @@
 from apps.kyc.services.admin import (
     consulter_piece,
+    dossiers_soumis,
     get_dossier,
     lister_dossiers,
     rejeter,
@@ -22,6 +23,7 @@ __all__ = [
     "DossierNonModifiable",
     "ajouter_piece",
     "consulter_piece",
+    "dossiers_soumis",
     "est_verifie",
     "get_dossier",
     "lister_dossiers",

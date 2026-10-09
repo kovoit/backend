@@ -23,12 +23,14 @@ class DossierListeVue(APIView):
                 "statut", str, enum=["non_verifie", "en_attente", "verifie", "rejete"]
             ),
             OpenApiParameter("type", str, enum=["passager", "conducteur"]),
+            OpenApiParameter("recherche", str, description="Nom, prénom, email, téléphone"),
         ],
         responses=DossierAdminSerializer(many=True),
     )
     def get(self, request):
+        parametres = request.query_params
         dossiers = services.lister_dossiers(
-            request.query_params.get("statut"), request.query_params.get("type")
+            parametres.get("statut"), parametres.get("type"), parametres.get("recherche")
         )
         return reponse_paginee(
             request, dossiers, DossierAdminSerializer, "Dossiers récupérés.", self
@@ -81,4 +83,8 @@ class PieceFichierVue(APIView):
     )
     def get(self, request, pk):
         piece = services.consulter_piece(pk, request.user)
-        return FileResponse(piece.fichier.open("rb"), as_attachment=False)
+        reponse = FileResponse(piece.fichier.open("rb"), as_attachment=False)
+        # Donnée sensible : jamais conservée par le navigateur ni par un proxy
+        reponse["Cache-Control"] = "no-store, private"
+        reponse["X-Content-Type-Options"] = "nosniff"
+        return reponse

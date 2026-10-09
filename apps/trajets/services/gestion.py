@@ -25,8 +25,8 @@ def mes_trajets(conducteur):
     return trajet_repository.de_conducteur(conducteur)
 
 
-def lister_trajets(statut: str | None = None):
-    return trajet_repository.lister(statut)
+def lister_trajets(statut: str | None = None, recherche: str | None = None, jour=None):
+    return trajet_repository.lister(statut, recherche, jour)
 
 
 def retirer_place(trajet: Trajet) -> None:

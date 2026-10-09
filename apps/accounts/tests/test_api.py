@@ -2,9 +2,6 @@ import re
 
 import pytest
 from django.core import mail
-from rest_framework import status
-
-from apps.reservations.models import StatutReservation
 
 pytestmark = pytest.mark.django_db
 
@@ -98,20 +95,6 @@ def test_admin_liste_et_recherche_les_utilisateurs(client_admin, utilisateur):
 
     assert reponse.status_code == 200
     assert reponse.json()["reponse"]["count"] == 1
-
-
-def test_admin_suspend_puis_reactive(client_admin, passager, reservation):
-    url = f"/api/v1/admin/utilisateurs/{passager.id}/"
-
-    reponse = client_admin.post(url + "suspendre/", {"jours": 7}, format="json")
-    assert reponse.status_code == 200
-    assert reponse.json()["reponse"]["statut_compte"] == "suspendu"
-    reservation.refresh_from_db()
-    assert reservation.statut == StatutReservation.ANNULEE
-
-    reponse = client_admin.post(url + "reactiver/")
-    assert reponse.json()["reponse"]["statut_compte"] == "actif"
-    assert client_admin.get(url).status_code == status.HTTP_200_OK
 
 
 def test_utilisateur_suspendu_ne_peut_pas_reserver(client_de, passager, trajet):

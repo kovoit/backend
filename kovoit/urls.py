@@ -33,6 +33,7 @@ API_ADMIN = [
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="docs"), name="racine"),
     path("django-admin/", admin.site.urls),
+    path("api/v1/auth/admin/", include("apps.accounts.api.admin_auth_urls")),
     path("api/v1/admin/parametres/", include("apps.parametres.api.urls")),
     *[path("api/v1/admin/", include(module)) for module in API_ADMIN],
     *[path("api/v1/", include(module)) for module in API_APPLICATION],

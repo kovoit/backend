@@ -105,6 +105,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "prive"))
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_ALLOW_CREDENTIALS = True  # cookie de refresh du back-office, origines ci-dessus seulement
+
+# Refresh du back-office en cookie httpOnly SameSite=Lax : admin et API sur le même site
+ADMIN_REFRESH_COOKIE = "kovoit_admin_refresh"
+ADMIN_REFRESH_COOKIE_PATH = "/api/v1/auth/admin/"
+ADMIN_REFRESH_COOKIE_SECURE = env.bool("ADMIN_REFRESH_COOKIE_SECURE", default=not DEBUG)
 
 LOGGING = {
     "version": 1,
@@ -128,7 +134,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "300/min"},
+    "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "300/min", "connexion_admin": "5/min"},
 }
 
 SIMPLE_JWT = {

@@ -58,6 +58,14 @@ def signaler(auteur, reservation_id, motif: str) -> Signalement:
         )
 
 
+def dernieres_notes(utilisateur, nombre: int = 5):
+    return note_repository.dernieres_recues(utilisateur, nombre)
+
+
+def signalements_de_reservation(reservation):
+    return signalement_repository.de_reservation(reservation)
+
+
 def lister_signalements(statut: str | None = None):
     return signalement_repository.lister(statut)
 

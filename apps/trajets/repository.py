@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 
 from apps.core.repository import BaseRepository
 from apps.trajets.models import PointPriseEnCharge, StatutTrajet, Trajet
@@ -58,12 +59,45 @@ class TrajetRepository(BaseRepository[Trajet]):
             depart_le__gt=maintenant,
         )
 
-    def lister(self, statut: str | None = None):
+    def lister(
+        self,
+        statut: str | None = None,
+        recherche: str | None = None,
+        jour: date | None = None,
+    ):
+        """Back-office : départs les plus récents d'abord ; `jour` en heure de Lomé."""
         queryset = self.queryset().order_by("-depart_le")
-        return queryset.filter(statut=statut) if statut else queryset
+        if statut:
+            queryset = queryset.filter(statut=statut)
+        if jour:
+            queryset = queryset.filter(depart_le__date=jour)
+        if recherche:
+            correspond = (
+                Q(conducteur__nom__icontains=recherche)
+                | Q(conducteur__prenom__icontains=recherche)
+                | Q(conducteur__telephone__icontains=recherche)
+                | Q(depart_libelle__icontains=recherche)
+                | Q(arrivee_libelle__icontains=recherche)
+                | Q(points__libelle__icontains=recherche)
+            )
+            # distinct : un trajet peut correspondre par plusieurs points de prise en charge
+            queryset = queryset.filter(correspond).distinct()
+        return queryset
 
     def compter(self, **filtres) -> int:
         return self.model.objects.filter(**filtres).count()
+
+    def termines_par_jour(self, debut: datetime, fin: datetime) -> dict[date, int]:
+        """Trajets terminés par jour de départ (heure de Lomé)."""
+        lignes = (
+            self.filter(statut=StatutTrajet.TERMINE, depart_le__range=(debut, fin))
+            .order_by()
+            .annotate(jour=TruncDate("depart_le"))
+            .values("jour")
+            .annotate(total=Count("id"))
+            .values_list("jour", "total")
+        )
+        return dict(lignes)
 
 
 class PointRepository(BaseRepository[PointPriseEnCharge]):
