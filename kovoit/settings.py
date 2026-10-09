@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -164,9 +165,10 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 # Services externes (remplaçables : voir apps/routage et apps/notifications)
 ROUTAGE_PROVIDER = env("ROUTAGE_PROVIDER", default="apps.routage.providers.OsrmProvider")
 OSRM_URL = env("OSRM_URL", default="https://router.project-osrm.org")
-NOTIFICATIONS_PUSH_SENDER = env(
-    "NOTIFICATIONS_PUSH_SENDER", default="apps.notifications.push.JournalPushSender"
-)
+# Push : FCM dès que le fichier de clé Firebase est fourni, sinon simple journal + email
+FIREBASE_CREDENTIALS = env("FIREBASE_CREDENTIALS", default="")
+_PUSH = "fcm.FcmPushSender" if FIREBASE_CREDENTIALS else "push.JournalPushSender"
+NOTIFICATIONS_PUSH_SENDER = env("NOTIFICATIONS_PUSH_SENDER", default=f"apps.notifications.{_PUSH}")
 
 # Email (Gmail SMTP en production, console en développement)
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
@@ -188,6 +190,10 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }
     SPECTACULAR_SETTINGS["SERVE_PERMISSIONS"] = ["rest_framework.permissions.IsAdminUser"]
     # HSTS preload volontairement désactivé : l'inscription du domaine dans les
     # navigateurs est quasi irréversible. À activer quand le domaine sera définitif.

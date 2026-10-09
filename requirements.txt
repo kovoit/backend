@@ -9,9 +9,11 @@ psycopg[binary]~=3.2.0
 celery~=5.5.0
 redis~=6.2.0
 Pillow~=11.3.0
+firebase-admin~=6.9  # notifications push (FCM)
 
 # --- Serveur de production ---
 gunicorn~=23.0.0
+whitenoise~=6.9  # fichiers statiques du Django admin
 
 # --- Tests et qualité ---
 pytest~=8.4.0

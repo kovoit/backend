@@ -13,6 +13,7 @@ ENUM_NAME_OVERRIDES = {
     "StatutSignalementEnum": "apps.confiance.models.StatutSignalement",
     "TypeTransactionEnum": "apps.portefeuille.models.TypeTransaction",
     "StatutTransactionEnum": "apps.portefeuille.models.StatutTransaction",
+    "MoyenPaiementEnum": "apps.portefeuille.models.MoyenPaiement",
 }
 
 SCHEMA_ECHEC = {

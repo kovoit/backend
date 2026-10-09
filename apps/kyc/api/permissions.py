@@ -5,7 +5,7 @@ from apps.kyc.services import est_verifie, peut_publier
 
 
 class KycPassagerVerifie(BasePermission):
-    message = "Votre identité doit être vérifiée (KYC passager) pour réserver."
+    message = "Vérifiez votre identité (KYC) depuis votre profil pour pouvoir réserver."
     code = "kyc_passager_requis"
 
     def has_permission(self, request, view) -> bool:
@@ -13,7 +13,10 @@ class KycPassagerVerifie(BasePermission):
 
 
 class PeutPublier(BasePermission):
-    message = "Un KYC conducteur vérifié et un véhicule déclaré sont nécessaires pour publier."
+    message = (
+        "Pour proposer un trajet, faites vérifier votre KYC conducteur et déclarez votre "
+        "véhicule depuis votre profil."
+    )
     code = "conducteur_non_habilite"
 
     def has_permission(self, request, view) -> bool:

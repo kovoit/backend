@@ -51,7 +51,7 @@ def test_acceptation_retire_une_place_et_rend_le_trajet_complet(conducteur, pass
 
 def test_plus_de_place_pour_une_seconde_acceptation(conducteur, passager, utilisateur):
     trajet = publier_trajet(conducteur, places=1)
-    portefeuille.recharger(utilisateur, 1000)
+    portefeuille.recharger(utilisateur, 1000, "mixx")
     premiere, seconde = demander(passager, trajet), None
     from apps.kyc.tests.factories import verifier_kyc
 

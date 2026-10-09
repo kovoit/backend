@@ -1,3 +1,4 @@
+from apps.accounts.services.etat import etat_profil
 from apps.accounts.services.otp import (
     CodeOtpInvalide,
     CompteDesactive,
@@ -27,6 +28,7 @@ __all__ = [
     "deconnecter",
     "demander_otp",
     "est_suspendu",
+    "etat_profil",
     "get_utilisateur",
     "lister_utilisateurs",
     "modifier_profil",

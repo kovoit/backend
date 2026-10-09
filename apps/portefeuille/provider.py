@@ -4,13 +4,13 @@ import uuid
 
 
 class SimulationPaiementProvider:
-    def collecter(self, utilisateur, montant: int) -> str:
-        """Recharge (Mobile Money simulé). Renvoie la référence de l'opération."""
-        return f"SIM-RCH-{uuid.uuid4().hex[:12].upper()}"
+    def collecter(self, utilisateur, montant: int, moyen: str) -> str:
+        """Encaissement Mobile Money simulé (Flooz ou Mixx). Renvoie la référence."""
+        return f"SIM-{moyen.upper()}-{uuid.uuid4().hex[:12].upper()}"
 
-    def verser(self, utilisateur, montant: int) -> str:
-        """Retrait vers Mobile Money (simulé)."""
-        return f"SIM-RET-{uuid.uuid4().hex[:12].upper()}"
+    def verser(self, utilisateur, montant: int, moyen: str) -> str:
+        """Versement vers Mobile Money (simulé)."""
+        return f"SIM-{moyen.upper()}-RET-{uuid.uuid4().hex[:8].upper()}"
 
 
 provider = SimulationPaiementProvider()

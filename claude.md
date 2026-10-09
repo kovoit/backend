@@ -24,10 +24,11 @@ Kovoit : covoiturage urbain à Lomé (Togo) par partage des frais de carburant. 
 ```bash
 python -m venv .venv && .venv/Scripts/pip install -r requirements.txt   # Windows
 cp .env.example .env                       # puis renseigner DJANGO_SECRET_KEY, Gmail…
-docker compose up -d db redis              # postgres + redis (ou `docker compose up` pour tout)
+docker compose up -d db redis              # postgres (5433) + redis (6381) — ou `docker compose up` pour tout (API sur 8001)
 python manage.py migrate
 python manage.py seed_parametres           # valeurs de départ des paramètres
 python manage.py createsuperuser           # compte admin (email + mot de passe)
+python manage.py seed_demo                 # comptes passager/conducteur vérifiés + trajet + jetons JWT (DEBUG)
 python manage.py runserver                 # API : /api/v1/  · Swagger : /api/docs/
 celery -A kovoit worker -l info --pool=solo   # worker (--pool=solo obligatoire sous Windows)
 celery -A kovoit beat -l info              # tâches planifiées
@@ -40,6 +41,8 @@ python manage.py spectacular --file schema.yml --validate
 - **Sans Redis en local** : `CELERY_TASK_ALWAYS_EAGER=True` et `CACHE_URL=locmemcache://` dans `.env` (les tâches s'exécutent immédiatement).
 - **Pas de PostGIS** (GDAL absent sous Windows) : pré-filtre en base sur une boîte lat/lng puis distance Haversine exacte en Python (`trajets/services/recherche.py`).
 - Pièces KYC stockées dans `PRIVATE_MEDIA_ROOT` (`prive/`, hors `MEDIA_ROOT`, jamais servi par URL).
+- Photos (`/media/`) servies par Django en DEBUG uniquement ; en prod par le serveur web. Statiques du Django admin : WhiteNoise.
+- **Push** : `FIREBASE_CREDENTIALS` (chemin du JSON de compte de service, jamais commité) active `FcmPushSender`. Sans clé : push journalisé et **email de secours** systématique. Jeton FCM périmé → appareil supprimé, email de secours.
 - Le Django admin (backoffice interne) est sur `/django-admin/` ; `/api/v1/admin/` est l'API de l'admin React.
 
 ---

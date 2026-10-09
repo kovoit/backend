@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.core.models import BaseModel
+from apps.portefeuille.models import MoyenPaiement
 
 
 class StatutReservation(models.TextChoices):
@@ -39,6 +40,9 @@ class Reservation(BaseModel):
     distance_km = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     prix = models.PositiveIntegerField("prix (F CFA)")
     frais_service = models.PositiveIntegerField("frais de service (F CFA)", default=0)
+    # Complément payé par Mobile Money quand le portefeuille ne suffisait pas
+    moyen_paiement = models.CharField(max_length=10, choices=MoyenPaiement.choices, blank=True)
+    complement_paye = models.PositiveIntegerField("complément payé (F CFA)", default=0)
     statut = models.CharField(
         max_length=10,
         choices=StatutReservation.choices,
