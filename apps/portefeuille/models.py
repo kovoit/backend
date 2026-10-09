@@ -14,6 +14,13 @@ class TypeTransaction(models.TextChoices):
     REMBOURSEMENT = "remboursement", "Remboursement"
 
 
+class MoyenPaiement(models.TextChoices):
+    """Mobile Money disponibles au Togo (T-Money est devenu Mixx)."""
+
+    FLOOZ = "flooz", "Flooz (Moov Africa)"
+    MIXX = "mixx", "Mixx (Togocom)"
+
+
 class StatutTransaction(models.TextChoices):
     VALIDEE = "validee", "Validée"
 
@@ -32,6 +39,12 @@ class Transaction(BaseModel):
         blank=True,
         on_delete=models.PROTECT,
         related_name="transactions",
+    )
+    moyen_paiement = models.CharField(
+        max_length=10,
+        choices=MoyenPaiement.choices,
+        blank=True,
+        help_text="Renseigné pour les mouvements passés par Mobile Money (recharge, retrait).",
     )
     reference_externe = models.CharField(max_length=64, blank=True)
     statut = models.CharField(

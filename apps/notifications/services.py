@@ -1,9 +1,10 @@
-"""Notifications : push si l'utilisateur a un appareil enregistré, sinon email (Gmail SMTP)."""
+"""Notifications : push (FCM) vers les appareils enregistrés, email (Gmail SMTP) en secours."""
 
 import logging
 
 from apps.core.exceptions import RessourceIntrouvable
 from apps.notifications.models import AppareilNotification
+from apps.notifications.push import obtenir_push_sender
 from apps.notifications.repository import appareil_repository
 from apps.notifications.tasks import envoyer_email_tache, envoyer_push_tache
 
@@ -24,10 +25,12 @@ def envoyer_email(destinataire: str, sujet: str, message: str) -> None:
 
 
 def notifier(utilisateur, titre: str, message: str, donnees: dict | None = None) -> None:
+    """Push vers les téléphones de l'utilisateur ; email si aucun téléphone n'est enregistré
+    ou si le push n'est pas réellement envoyé (Firebase non configuré)."""
     jetons = appareil_repository.jetons_de(utilisateur)
     if jetons:
-        _lancer(envoyer_push_tache, jetons, titre, message, donnees or {})
-    else:
+        _lancer(envoyer_push_tache, jetons, titre, message, donnees or {}, utilisateur.email)
+    if not jetons or not obtenir_push_sender().envoi_reel:
         envoyer_email(utilisateur.email, f"Kovoit — {titre}", message)
 
 

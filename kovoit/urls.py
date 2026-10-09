@@ -1,6 +1,9 @@
+from django.conf import settings
 from django.contrib import admin
+from django.http import Http404
 from django.urls import include, path, re_path
 from django.views.generic import RedirectView
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.core.api.vues_erreurs import page_introuvable
@@ -41,6 +44,17 @@ urlpatterns = [
     # Toute URL d'API inconnue répond en JSON (enveloppe failed), même avec DEBUG=True
     re_path(r"^api/", page_introuvable),
 ]
+
+
+def servir_media(request, chemin: str):
+    """Photos (profil, véhicule) en développement uniquement. En production, le serveur web
+    sert /media/. Les pièces KYC ne sont jamais concernées : elles sont hors de MEDIA_ROOT."""
+    if not settings.DEBUG:
+        raise Http404
+    return serve(request, chemin, document_root=settings.MEDIA_ROOT)
+
+
+urlpatterns.insert(0, re_path(r"^media/(?P<chemin>.+)$", servir_media))
 
 handler404 = "apps.core.api.vues_erreurs.page_introuvable"
 handler500 = "apps.core.api.vues_erreurs.erreur_serveur"

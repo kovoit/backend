@@ -1,30 +1,18 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import serializers
 from rest_framework.views import APIView
 
 from apps.accounts.api.permissions import CONNECTE
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 from apps.portefeuille import services
-from apps.portefeuille.models import Transaction
+from apps.portefeuille.api.serializers import (
+    MoyenPaiementSerializer,
+    OperationMobileMoneySerializer,
+    SoldeSerializer,
+    TransactionSerializer,
+)
 
 TAG = "portefeuille (simulé)"
-
-
-class SoldeSerializer(serializers.Serializer):
-    total = serializers.IntegerField()
-    bloque = serializers.IntegerField()
-    disponible = serializers.IntegerField()
-
-
-class TransactionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Transaction
-        fields = ["id", "type", "montant", "reservation", "reference_externe", "statut", "cree_le"]
-
-
-class MontantSerializer(serializers.Serializer):
-    montant = serializers.IntegerField(min_value=1, help_text="Montant en F CFA")
 
 
 class PortefeuilleVue(APIView):
@@ -33,6 +21,19 @@ class PortefeuilleVue(APIView):
     @extend_schema(tags=[TAG], summary="Solde du portefeuille", responses=SoldeSerializer)
     def get(self, request):
         return succes("Solde récupéré.", SoldeSerializer(services.solde(request.user)).data)
+
+
+class MoyensPaiementVue(APIView):
+    permission_classes = CONNECTE
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Moyens de paiement Mobile Money (Flooz, Mixx)",
+        responses=MoyenPaiementSerializer(many=True),
+    )
+    def get(self, request):
+        moyens = MoyenPaiementSerializer(services.moyens_paiement(), many=True).data
+        return succes("Moyens de paiement disponibles.", moyens)
 
 
 class TransactionsVue(APIView):
@@ -56,14 +57,14 @@ class RechargerVue(APIView):
 
     @extend_schema(
         tags=[TAG],
-        summary="Recharger (Mobile Money simulé)",
-        request=MontantSerializer,
+        summary="Recharger par Flooz ou Mixx (simulé)",
+        request=OperationMobileMoneySerializer,
         responses=SoldeSerializer,
     )
     def post(self, request):
-        entree = MontantSerializer(data=request.data)
+        entree = OperationMobileMoneySerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        solde = services.recharger(request.user, entree.validated_data["montant"])
+        solde = services.recharger(request.user, **entree.validated_data)
         return succes("Recharge effectuée (simulation).", SoldeSerializer(solde).data)
 
 
@@ -72,12 +73,12 @@ class RetirerVue(APIView):
 
     @extend_schema(
         tags=[TAG],
-        summary="Retirer ses gains (simulé)",
-        request=MontantSerializer,
+        summary="Retirer ses gains vers Flooz ou Mixx (simulé)",
+        request=OperationMobileMoneySerializer,
         responses=SoldeSerializer,
     )
     def post(self, request):
-        entree = MontantSerializer(data=request.data)
+        entree = OperationMobileMoneySerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        solde = services.retirer(request.user, entree.validated_data["montant"])
+        solde = services.retirer(request.user, **entree.validated_data)
         return succes("Retrait effectué (simulation).", SoldeSerializer(solde).data)

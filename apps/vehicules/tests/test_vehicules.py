@@ -60,3 +60,30 @@ def test_vehicule_lie_a_un_trajet_non_supprimable(client_de, conducteur, trajet)
 
     assert reponse.status_code == 409
     assert reponse.json()["reponse"]["code"] == "VEHICULE_UTILISE"
+
+
+def test_la_photo_du_vehicule_est_accessible(client_utilisateur, client, settings):
+    settings.DEBUG = True  # en production, /media/ est servi par le serveur web
+    from io import BytesIO
+
+    from PIL import Image
+
+    from apps.kyc.tests.factories import fichier_png
+
+    tampon = BytesIO()
+    Image.new("RGB", (4, 4), "orange").save(tampon, "PNG")
+    photo = fichier_png("voiture.png")
+    photo.file = BytesIO(tampon.getvalue())
+    photo.size = len(tampon.getvalue())
+
+    reponse = client_utilisateur.post(URL, {**VOITURE, "photo": photo}, format="multipart")
+
+    url_photo = reponse.json()["reponse"]["photo"]
+    assert "/media/vehicules/" in url_photo
+    assert client.get(url_photo.split("testserver")[-1]).status_code == 200
+
+
+def test_media_non_servi_hors_developpement(client, settings):
+    settings.DEBUG = False
+
+    assert client.get("/media/vehicules/voiture.png").status_code == 404

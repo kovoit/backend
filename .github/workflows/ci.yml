@@ -42,11 +42,11 @@ jobs:
         run: python scripts/check_file_length.py
 
   tests:
-    name: Tests (PostGIS + Redis)
+    name: Tests (PostgreSQL + Redis)
     runs-on: ubuntu-latest
     services:
       db:
-        image: postgis/postgis:16-3.4
+        image: postgres:16-alpine
         env:
           POSTGRES_DB: kovoit
           POSTGRES_USER: kovoit
@@ -76,9 +76,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
-
-      - name: Installer GDAL (GeoDjango)
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin
 
       - name: Installer les dépendances
         run: pip install -r requirements.txt

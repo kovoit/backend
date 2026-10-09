@@ -15,5 +15,8 @@ class AppareilRepository(BaseRepository[AppareilNotification]):
         )
         return appareil
 
+    def supprimer_jeton(self, jeton: str) -> None:
+        self.filter(jeton=jeton).delete()
+
 
 appareil_repository = AppareilRepository()
