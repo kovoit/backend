@@ -1,1 +1,1 @@
-"""Données de démonstration (développement local uniquement) : commande `seed_demo`."""
+"""Données de démonstration (dev local) : commande `seed_backoffice`, 30 jours d'activité."""

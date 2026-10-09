@@ -6,6 +6,7 @@ from apps.accounts.services.connexion_admin import (
     deconnecter_admin,
     rafraichir_admin,
 )
+from apps.accounts.services.etat import etat_profil
 from apps.accounts.services.otp import (
     CodeOtpInvalide,
     CompteDesactive,
@@ -45,6 +46,7 @@ __all__ = [
     "deconnecter_admin",
     "demander_otp",
     "est_suspendu",
+    "etat_profil",
     "get_utilisateur",
     "lister_utilisateurs",
     "modifier_profil",

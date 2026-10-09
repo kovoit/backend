@@ -66,7 +66,7 @@ def test_mode_conducteur_refuse_sans_kyc(client_utilisateur):
     )
 
     assert reponse.status_code == 403
-    assert reponse.json()["reponse"]["code"] == "MODE_CONDUCTEUR_INDISPONIBLE"
+    assert reponse.json()["reponse"]["code"] == "KYC_CONDUCTEUR_REQUIS"
 
 
 def test_mode_conducteur_accepte(client_de, conducteur):
@@ -76,7 +76,7 @@ def test_mode_conducteur_accepte(client_de, conducteur):
 
     assert reponse.status_code == 200
     assert reponse.json()["reponse"]["mode_actif"] == "conducteur"
-    assert reponse.json()["reponse"]["peut_publier"] is True
+    assert reponse.json()["reponse"]["etat"]["acces"]["peut_publier"] is True
 
 
 def test_deconnexion(client_utilisateur, utilisateur):

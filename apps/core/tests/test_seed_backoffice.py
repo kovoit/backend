@@ -17,8 +17,8 @@ def en_dev(settings, admin):
     return admin
 
 
-def test_seed_demo_genere_un_jeu_coherent(en_dev):
-    call_command("seed_demo")
+def test_seed_backoffice_genere_un_jeu_coherent(en_dev):
+    call_command("seed_backoffice")
 
     statuts_kyc = set(KycDossier.objects.values_list("statut", flat=True))
     assert {StatutKyc.VERIFIE, StatutKyc.EN_ATTENTE, StatutKyc.REJETE} <= statuts_kyc
@@ -30,22 +30,22 @@ def test_seed_demo_genere_un_jeu_coherent(en_dev):
     assert Signalement.objects.filter(statut="traite").exists()
 
 
-def test_seed_demo_ne_s_execute_qu_une_fois(en_dev):
+def test_seed_backoffice_ne_s_execute_qu_une_fois(en_dev):
     UserFactory(email=f"deja@{DOMAINE}")
 
     with pytest.raises(CommandError, match="déjà présentes"):
-        call_command("seed_demo")
+        call_command("seed_backoffice")
 
 
-def test_seed_demo_refuse_hors_developpement(settings, admin):
+def test_seed_backoffice_refuse_hors_developpement(settings, admin):
     settings.DEBUG = False
 
     with pytest.raises(CommandError, match="développement"):
-        call_command("seed_demo")
+        call_command("seed_backoffice")
 
 
-def test_seed_demo_exige_un_admin(settings, db):
+def test_seed_backoffice_exige_un_admin(settings, db):
     settings.DEBUG = True
 
     with pytest.raises(CommandError, match="administrateur"):
-        call_command("seed_demo")
+        call_command("seed_backoffice")

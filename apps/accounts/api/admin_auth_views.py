@@ -17,6 +17,10 @@ from apps.accounts.api.serializers import UtilisateurAdminSerializer
 from apps.core.api.reponses import succes
 
 TAG = "admin - authentification"
+# Refresh en cookie httpOnly SameSite=Lax : l'admin et l'API doivent être sur le même site
+# (ex. admin.kovoit.tg et api.kovoit.tg ; localhost:5173 et :8000 en dev). Secure hors DEBUG.
+COOKIE_REFRESH = "kovoit_admin_refresh"
+CHEMIN_COOKIE = "/api/v1/auth/admin/"
 
 
 class ConnexionAdminSerializer(serializers.Serializer):
@@ -29,17 +33,17 @@ class SessionAdminSerializer(serializers.Serializer):
     utilisateur = UtilisateurAdminSerializer()
 
 
-class AccesSerializer(serializers.Serializer):
+class AccesAdminSerializer(serializers.Serializer):
     access = serializers.CharField()
 
 
 def _poser_cookie(reponse, refresh: str):
     reponse.set_cookie(
-        settings.ADMIN_REFRESH_COOKIE,
+        COOKIE_REFRESH,
         refresh,
         max_age=int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()),
-        path=settings.ADMIN_REFRESH_COOKIE_PATH,
-        secure=settings.ADMIN_REFRESH_COOKIE_SECURE,
+        path=CHEMIN_COOKIE,
+        secure=not settings.DEBUG,
         httponly=True,
         samesite="Lax",
     )
@@ -47,7 +51,7 @@ def _poser_cookie(reponse, refresh: str):
 
 
 def _cookie(request) -> str | None:
-    return request.COOKIES.get(settings.ADMIN_REFRESH_COOKIE)
+    return request.COOKIES.get(COOKIE_REFRESH)
 
 
 class ConnexionAdminVue(APIView):
@@ -81,7 +85,7 @@ class RafraichirAdminVue(APIView):
         tags=[TAG],
         summary="Nouveau jeton d'accès à partir du cookie de session",
         request=None,
-        responses=AccesSerializer,
+        responses=AccesAdminSerializer,
     )
     def post(self, request):
         jetons = services.rafraichir_admin(_cookie(request))
@@ -99,9 +103,7 @@ class DeconnexionAdminVue(APIView):
     def post(self, request):
         services.deconnecter_admin(_cookie(request))
         reponse = succes("Déconnexion effectuée.")
-        reponse.delete_cookie(
-            settings.ADMIN_REFRESH_COOKIE, path=settings.ADMIN_REFRESH_COOKIE_PATH, samesite="Lax"
-        )
+        reponse.delete_cookie(COOKIE_REFRESH, path=CHEMIN_COOKIE, samesite="Lax")
         return reponse
 
 

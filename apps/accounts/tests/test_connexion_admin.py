@@ -1,8 +1,8 @@
 import pytest
-from django.conf import settings
 from django.core.cache import cache
 from rest_framework.test import APIClient
 
+from apps.accounts.api.admin_auth_views import CHEMIN_COOKIE, COOKIE_REFRESH
 from apps.accounts.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -12,7 +12,7 @@ CONNEXION = "/api/v1/auth/admin/connexion/"
 RAFRAICHIR = "/api/v1/auth/admin/jeton/rafraichir/"
 DECONNEXION = "/api/v1/auth/admin/deconnexion/"
 MOI = "/api/v1/auth/admin/moi/"
-COOKIE = settings.ADMIN_REFRESH_COOKIE
+COOKIE = COOKIE_REFRESH
 
 
 def _compte(**champs):
@@ -43,7 +43,7 @@ def test_connexion_admin_pose_le_refresh_en_cookie_httponly(api_client, admin_md
     cookie = reponse.cookies[COOKIE]
     assert cookie["httponly"] is True
     assert cookie["samesite"] == "Lax"
-    assert cookie["path"] == settings.ADMIN_REFRESH_COOKIE_PATH
+    assert cookie["path"] == CHEMIN_COOKIE
     admin_mdp.refresh_from_db()
     assert admin_mdp.last_login is not None
 

@@ -23,7 +23,8 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 | Vérification du compte | OTP par SMS | **OTP par email via Gmail SMTP**. Téléphone obligatoire mais non vérifié |
 | Notifications | Push, SMS si app fermée | Push, **email** si app fermée |
 | Tarification | Grille 200 / 300 / 500 F par tranche | **À définir plus tard** — prix temporaire = paramètre `prix_simulation` |
-| Paiement | Espèces ou portefeuille | **Portefeuille simulé** (aucun argent réel) |
+| Paiement | Espèces ou portefeuille | **Portefeuille simulé** + complément **Flooz (Moov Africa)** ou **Mixx (Togocom, ex-T-Money)** à la réservation |
+| KYC | Obligatoire avant de réserver / publier | **Non bloquant à l'inscription** : fait depuis le Profil ; réserver / publier restent verrouillés tant qu'il n'est pas validé |
 | Distances | Google Maps ou OSRM | **OSRM** |
 | Périmètre de ce dépôt | — | **Backend uniquement** (API pour Flutter et admin React) |
 
@@ -71,6 +72,13 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 Statuts d'un dossier : `non_verifie → en_attente → verifie | rejete`. Un dossier rejeté porte un motif et peut être soumis à nouveau.
 
 **Stockage des pièces :** privé (aucune URL publique), accès réservé à l'admin via un endpoint authentifié, **chaque consultation journalisée**.
+
+**Écran Profil (état renvoyé par `GET /moi/` → `etat`)**
+- `badge_kyc` : macaron orange tant que le KYC passager n'est pas fait ou qu'un dossier est rejeté.
+- `acces` : `peut_rechercher`, `peut_reserver`, `peut_publier` (les tableaux de bord grisent les actions verrouillées).
+- `mode_conducteur` : `disponible`, `kyc_conducteur_verifie`, `vehicule_declare` (bouton « Passer en mode conducteur / passager »).
+- `alertes` : liste `{code, message, action_requise}` (ex. `KYC_PASSAGER_NON_VERIFIE`, `VEHICULE_A_DECLARER`, `COMPTE_SUSPENDU`).
+- Bascule de mode (`PATCH /moi/mode/`) : retour passager toujours possible ; mode conducteur refusé avec `KYC_CONDUCTEUR_REQUIS` ou `VEHICULE_REQUIS`.
 
 **Règles d'accès**
 - Sans compte : aucun accès (sauf lien public de partage).
@@ -128,14 +136,14 @@ litige   → cloturee (décision admin)
 
 | Événement | Mouvements |
 |---|---|
-| Recharge (simulée) | `recharge` |
-| Demande de place | `blocage` du prix sur le solde passager (refus si solde disponible insuffisant) |
+| Recharge (simulée, Flooz ou Mixx) | `recharge` (moyen enregistré) |
+| Demande de place | `blocage` du montant sur le portefeuille ; s'il manque de l'argent, le complément est payé par Flooz ou Mixx (`recharge` du complément puis `blocage`). Sans moyen choisi : refus `SOLDE_INSUFFISANT` avec `complement_a_payer` |
 | Refus / annulation | `deblocage` |
 | Code de départ saisi | `deblocage` + `debit` passager |
 | Clôture | `credit` conducteur |
 | Absence | `deblocage` + `debit` passager + `credit` conducteur |
 | Litige | montant gelé jusqu'à décision admin (`credit` conducteur ou `remboursement` passager) |
-| Retrait (simulé) | `retrait` conducteur |
+| Retrait (simulé, vers Flooz ou Mixx) | `retrait` conducteur |
 
 Le solde n'est jamais stocké : il est calculé depuis le journal des transactions.
 
@@ -246,6 +254,6 @@ Préfixe `/api/v1/`. Toutes les réponses : `{ "statut": "success" | "failed", "
 | Trajets | `POST trajets/` · `GET trajets/recherche/` · `GET trajets/mes-trajets/` · `GET trajets/{id}/` · `GET trajets/{id}/reservations/` · `POST trajets/{id}/position/` · `POST trajets/{id}/terminer/` · `POST trajets/{id}/annuler/` |
 | Réservations | `GET/POST reservations/` · `GET reservations/{id}/` · `POST reservations/{id}/accepter/` · `refuser/` · `annuler/` · `code-depart/` · `absent/` · `confirmer-arrivee/` · `note/` · `signalement/` · `partage/` |
 | Partage (public) | `GET partage/{jeton}/` |
-| Portefeuille (simulé) | `GET portefeuille/` · `GET portefeuille/transactions/` · `POST portefeuille/recharger/` · `POST portefeuille/retirer/` |
+| Portefeuille (simulé) | `GET portefeuille/` · `GET portefeuille/moyens/` · `GET portefeuille/transactions/` · `POST portefeuille/recharger/` · `POST portefeuille/retirer/` |
 | Notifications | `POST notifications/appareils/` · `DELETE notifications/appareils/{jeton}/` |
 | Admin (`admin/…`) | `utilisateurs/` (+ `{id}/`, `suspendre/`, `reactiver/`) · `kyc/` (+ `{id}/`, `valider/`, `rejeter/`, `pieces/{id}/fichier/`) · `trajets/` · `reservations/` · `signalements/` (+ `{id}/traiter/`) · `indicateurs/` · `parametres/` (+ `{cle}/`) |

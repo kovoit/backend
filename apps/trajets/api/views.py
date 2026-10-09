@@ -62,9 +62,15 @@ class MesTrajetsVue(APIView):
 class TrajetDetailVue(APIView):
     permission_classes = CONNECTE
 
-    @extend_schema(tags=[TAG], summary="Détail d'un trajet", responses=s.TrajetSerializer)
+    @extend_schema(
+        tags=[TAG],
+        summary="Détail d'un trajet + aperçu du paiement (portefeuille, complément Flooz/Mixx)",
+        responses=s.TrajetDetailSerializer,
+    )
     def get(self, request, pk):
-        return succes("Trajet récupéré.", s.TrajetSerializer(services.get_trajet(pk)).data)
+        trajet = services.get_trajet(pk)
+        donnees = s.TrajetDetailSerializer(trajet, context={"utilisateur": request.user}).data
+        return succes("Trajet récupéré.", donnees)
 
 
 class PositionVue(APIView):

@@ -4,6 +4,7 @@ from apps.portefeuille.api import views
 
 urlpatterns = [
     path("portefeuille/", views.PortefeuilleVue.as_view(), name="portefeuille"),
+    path("portefeuille/moyens/", views.MoyensPaiementVue.as_view(), name="portefeuille-moyens"),
     path(
         "portefeuille/transactions/",
         views.TransactionsVue.as_view(),

@@ -1,6 +1,9 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.confiance.api.serializers import PersonneSerializer
+from apps.portefeuille.api.serializers import ApercuPaiementSerializer
+from apps.portefeuille.services import apercu_paiement
 from apps.tarification.services import frais_service
 from apps.trajets.models import PointPriseEnCharge, Trajet
 from apps.vehicules.api.serializers import VehiculeResumeSerializer
@@ -45,6 +48,23 @@ class TrajetSerializer(serializers.ModelSerializer):
 
     def get_frais_service(self, trajet: Trajet) -> int:
         return frais_service()
+
+
+class TrajetDetailSerializer(TrajetSerializer):
+    """Écran « Détails du trajet & Réservation » : ajoute l'aperçu du paiement du lecteur.
+
+    Attend `context={"utilisateur": ...}`.
+    """
+
+    paiement = serializers.SerializerMethodField()
+
+    class Meta(TrajetSerializer.Meta):
+        fields = [*TrajetSerializer.Meta.fields, "paiement"]
+
+    @extend_schema_field(ApercuPaiementSerializer)
+    def get_paiement(self, trajet: Trajet) -> dict:
+        montant = trajet.prix_place + frais_service()
+        return apercu_paiement(self.context["utilisateur"], montant)
 
 
 class TrajetConducteurSerializer(TrajetSerializer):

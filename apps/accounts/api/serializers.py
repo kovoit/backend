@@ -2,7 +2,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.accounts.models import ModeActif, User, valider_telephone
-from apps.kyc.services import peut_publier, statuts_kyc
+from apps.accounts.services import etat_profil
+from apps.kyc.services import statuts_kyc
 
 
 class DemandeOtpSerializer(serializers.Serializer):
@@ -46,9 +47,34 @@ class StatutsKycSerializer(serializers.Serializer):
     conducteur = serializers.CharField()
 
 
+class AlerteSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    message = serializers.CharField()
+    action_requise = serializers.BooleanField()
+
+
+class AccesSerializer(serializers.Serializer):
+    peut_rechercher = serializers.BooleanField()
+    peut_reserver = serializers.BooleanField()
+    peut_publier = serializers.BooleanField()
+
+
+class ModeConducteurSerializer(serializers.Serializer):
+    disponible = serializers.BooleanField()
+    kyc_conducteur_verifie = serializers.BooleanField()
+    vehicule_declare = serializers.BooleanField()
+
+
+class EtatProfilSerializer(serializers.Serializer):
+    badge_kyc = serializers.BooleanField(help_text="Afficher le macaron orange sur le profil")
+    acces = AccesSerializer()
+    mode_conducteur = ModeConducteurSerializer()
+    alertes = AlerteSerializer(many=True)
+
+
 class ProfilSerializer(serializers.ModelSerializer):
     kyc = serializers.SerializerMethodField()
-    peut_publier = serializers.SerializerMethodField()
+    etat = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -65,7 +91,7 @@ class ProfilSerializer(serializers.ModelSerializer):
             "suspendu_jusqu_au",
             "profil_complet",
             "kyc",
-            "peut_publier",
+            "etat",
         ]
         read_only_fields = fields
 
@@ -73,8 +99,9 @@ class ProfilSerializer(serializers.ModelSerializer):
     def get_kyc(self, utilisateur: User) -> dict:
         return statuts_kyc(utilisateur)
 
-    def get_peut_publier(self, utilisateur: User) -> bool:
-        return peut_publier(utilisateur)
+    @extend_schema_field(EtatProfilSerializer)
+    def get_etat(self, utilisateur: User) -> dict:
+        return etat_profil(utilisateur)
 
 
 class ConnexionSerializer(serializers.Serializer):

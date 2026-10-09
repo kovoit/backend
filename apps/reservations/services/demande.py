@@ -20,9 +20,10 @@ def demander_place(
     arrivee_lat: float,
     arrivee_lng: float,
     arrivee_libelle: str = "",
+    moyen_paiement: str | None = None,
 ) -> Reservation:
-    """Demande une place : le montant est bloqué sur le portefeuille, la place n'est retenue
-    qu'à l'acceptation du conducteur."""
+    """Demande une place : le montant est bloqué sur le portefeuille (complément éventuel payé
+    par Flooz ou Mixx). La place n'est retenue qu'à l'acceptation du conducteur."""
     with transaction.atomic():
         trajet = trajet_repository.get_verrouille(trajet_id)
         if trajet.conducteur_id == passager.id:
@@ -46,7 +47,11 @@ def demander_place(
             prix=trajet.prix_place,
             frais_service=frais_service(),
         )
-        portefeuille.bloquer(reservation)
+        complement = portefeuille.bloquer(reservation, moyen_paiement)
+        if complement:
+            reservation_repository.update(
+                reservation, moyen_paiement=moyen_paiement, complement_paye=complement
+            )
 
     notifier_conducteur(
         reservation,

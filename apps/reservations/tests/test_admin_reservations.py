@@ -18,7 +18,7 @@ URL = "/api/v1/admin/reservations/"
 def _passager(prenom: str):
     utilisateur = UserFactory(prenom=prenom)
     verifier_kyc(utilisateur, "passager")
-    portefeuille.recharger(utilisateur, 5000)
+    portefeuille.recharger(utilisateur, 5000, "flooz")
     return utilisateur
 
 

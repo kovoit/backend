@@ -230,3 +230,7 @@ schema.yml
 # Pièces KYC (stockage privé, PRIVATE_MEDIA_ROOT) : jamais commitées
 prive/
 *.sqlite3
+# Clés de compte de service Firebase (secrets)
+*firebase*.json
+*-adminsdk-*.json
+secrets/

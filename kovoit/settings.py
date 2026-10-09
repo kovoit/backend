@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -107,11 +108,6 @@ PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "prive"))
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ALLOW_CREDENTIALS = True  # cookie de refresh du back-office, origines ci-dessus seulement
 
-# Refresh du back-office en cookie httpOnly SameSite=Lax : admin et API sur le même site
-ADMIN_REFRESH_COOKIE = "kovoit_admin_refresh"
-ADMIN_REFRESH_COOKIE_PATH = "/api/v1/auth/admin/"
-ADMIN_REFRESH_COOKIE_SECURE = env.bool("ADMIN_REFRESH_COOKIE_SECURE", default=not DEBUG)
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -170,9 +166,10 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 # Services externes (remplaçables : voir apps/routage et apps/notifications)
 ROUTAGE_PROVIDER = env("ROUTAGE_PROVIDER", default="apps.routage.providers.OsrmProvider")
 OSRM_URL = env("OSRM_URL", default="https://router.project-osrm.org")
-NOTIFICATIONS_PUSH_SENDER = env(
-    "NOTIFICATIONS_PUSH_SENDER", default="apps.notifications.push.JournalPushSender"
-)
+# Push : FCM dès que le fichier de clé Firebase est fourni, sinon simple journal + email
+FIREBASE_CREDENTIALS = env("FIREBASE_CREDENTIALS", default="")
+_PUSH = "fcm.FcmPushSender" if FIREBASE_CREDENTIALS else "push.JournalPushSender"
+NOTIFICATIONS_PUSH_SENDER = env("NOTIFICATIONS_PUSH_SENDER", default=f"apps.notifications.{_PUSH}")
 
 # Email (Gmail SMTP en production, console en développement)
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
@@ -184,8 +181,7 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Kovoit <no-reply@kovoit.tg>")
 EMAIL_TIMEOUT = 10
 
-# Sécurité : actif dès que DEBUG est désactivé (production)
-if not DEBUG:
+if not DEBUG:  # sécurité : actif dès que DEBUG est désactivé (production)
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
     SESSION_COOKIE_SECURE = True
@@ -194,6 +190,10 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }
     SPECTACULAR_SETTINGS["SERVE_PERMISSIONS"] = ["rest_framework.permissions.IsAdminUser"]
     # HSTS preload volontairement désactivé : l'inscription du domaine dans les
     # navigateurs est quasi irréversible. À activer quand le domaine sera définitif.

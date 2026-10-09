@@ -79,7 +79,7 @@ def passager(db):
     """Passager KYC vérifié avec 5 000 F sur son portefeuille."""
     utilisateur = UserFactory(prenom="Afi")
     verifier_kyc(utilisateur, "passager")
-    portefeuille.recharger(utilisateur, 5000)
+    portefeuille.recharger(utilisateur, 5000, "flooz")
     return utilisateur
 
 

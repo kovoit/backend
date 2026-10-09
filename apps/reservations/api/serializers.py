@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.confiance.api.serializers import PersonneSerializer
+from apps.portefeuille.models import MoyenPaiement
 from apps.reservations.code_depart import calculer_code
 from apps.reservations.models import Reservation, StatutReservation
 from apps.trajets.api.serializers import LATITUDE, LONGITUDE, PointSerializer, TrajetSerializer
@@ -16,6 +17,8 @@ CHAMPS_COMMUNS = [
     "prix",
     "frais_service",
     "montant_total",
+    "moyen_paiement",
+    "complement_paye",
     "annulation_tardive",
     "cree_le",
     "acceptee_le",
@@ -69,6 +72,14 @@ class DemandeSerializer(serializers.Serializer):
     arrivee_lat = serializers.FloatField(**LATITUDE)
     arrivee_lng = serializers.FloatField(**LONGITUDE)
     arrivee_libelle = serializers.CharField(max_length=255, required=False, default="")
+    moyen_paiement = serializers.ChoiceField(
+        choices=MoyenPaiement.choices,
+        required=False,
+        allow_null=True,
+        default=None,
+        help_text="Obligatoire seulement si le portefeuille ne couvre pas le montant : "
+        "le complément est payé par ce moyen.",
+    )
 
 
 class CodeDepartSerializer(serializers.Serializer):

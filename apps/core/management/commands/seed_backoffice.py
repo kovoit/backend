@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if not settings.DEBUG:
-            raise CommandError("seed_demo est réservé au développement (DEBUG=True).")
+            raise CommandError("seed_backoffice est réservé au développement (DEBUG=True).")
         if user_repository.exists(email__endswith=f"@{personnes.DOMAINE}"):
             raise CommandError("Données de démo déjà présentes. Repartir de zéro : manage.py flush")
         admin = user_repository.filter(is_staff=True).first()
@@ -83,7 +83,7 @@ class Command(BaseCommand):
             if index < NB_CONDUCTEURS and index not in EN_ATTENTE and index not in REJETS:
                 conducteurs.append(personne)
             elif index not in EN_ATTENTE and index not in REJETS and index != 23:
-                portefeuille.recharger(personne, 20_000)
+                portefeuille.recharger(personne, 20_000, "flooz")
                 passagers.append(personne)
             horloge.tick(timedelta(hours=3))
         return conducteurs, passagers
