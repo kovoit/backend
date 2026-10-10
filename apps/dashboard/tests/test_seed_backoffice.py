@@ -3,7 +3,7 @@ from django.core.management import CommandError, call_command
 
 from apps.accounts.tests.factories import UserFactory
 from apps.confiance.models import Signalement
-from apps.core.demo.personnes import DOMAINE
+from apps.dashboard.demo.personnes import DOMAINE
 from apps.kyc.models import KycDossier, KycPiece, StatutKyc
 from apps.reservations.models import Reservation, StatutReservation
 from apps.trajets.models import StatutTrajet, Trajet

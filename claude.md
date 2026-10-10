@@ -29,6 +29,7 @@ python manage.py migrate
 python manage.py seed_parametres           # valeurs de départ des paramètres
 python manage.py createsuperuser           # compte admin (email + mot de passe)
 python manage.py seed_demo                 # comptes passager/conducteur vérifiés + trajet + jetons JWT (DEBUG)
+python manage.py seed_backoffice           # 30 jours d'activité fictive pour le back-office React (DEBUG, exige un admin)
 python manage.py runserver                 # API : /api/v1/  · Swagger : /api/docs/
 celery -A kovoit worker -l info --pool=solo   # worker (--pool=solo obligatoire sous Windows)
 celery -A kovoit beat -l info              # tâches planifiées
@@ -67,7 +68,7 @@ backend/
     ├── partage/       # lien public temporaire « Partager mon trajet »
     ├── notifications/ # EmailSender (Gmail SMTP), PushSender (FCM), Fake
     ├── portefeuille/  # Transaction (journal) + PaiementProvider simulé
-    └── dashboard/     # indicateurs admin, économies conducteur
+    └── dashboard/     # indicateurs, tableau de bord admin, économies conducteur, données de démo (demo/, seed_*)
 ```
 
 ### Couches (obligatoires, sens unique)
@@ -144,6 +145,7 @@ apps/<app>/
 ## 6. Authentification — OTP email via Gmail SMTP
 
 - Login = **email** (unique). `telephone` obligatoire au profil mais **non vérifié** au MVP.
+- **Deux flux de connexion, tous deux en JWT** : application mobile = OTP email (ci-dessous) ; back-office React = email + mot de passe, réservé aux `is_staff` (`/api/v1/auth/admin/…`, `accounts/services/connexion_admin.py`).
 - Flux : `POST /auth/otp/demander` (email) → email avec code → `POST /auth/otp/verifier` (email + code) → JWT access + refresh.
 - Code OTP : 6 chiffres, **stocké haché**, validité `otp_validite_min`, `otp_max_essais` essais, renvoi limité (`otp_delai_renvoi_s`, `otp_max_par_heure`). Un nouveau code invalide le précédent.
 - Envoi **asynchrone** (Celery) via `notifications.EmailSender`.

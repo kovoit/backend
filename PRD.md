@@ -54,13 +54,15 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 - Valider / rejeter les dossiers KYC avec motif.
 - Consulter trajets, réservations, utilisateurs.
 - Traiter signalements et litiges.
-- Suspendre / réactiver un compte.
+- Suspendre (motif obligatoire, conservé sur le compte) / réactiver un compte.
 - Modifier les paramètres.
 - Suivre les indicateurs : trajets, passagers transportés, économies réalisées, utilisateurs vérifiés.
 
 ## 4. Compte, authentification et KYC
 
-**Authentification :** email + code OTP à 6 chiffres envoyé par Gmail SMTP → JWT. Code haché, durée de vie, essais et renvois limités par paramètres.
+**Authentification**
+- **Application mobile** (passagers, conducteurs) : email + code OTP à 6 chiffres envoyé par Gmail SMTP → JWT. Code haché, durée de vie, essais et renvois limités par paramètres.
+- **Back-office React** (administrateurs `is_staff` uniquement) : email + mot de passe → JWT (`/auth/admin/connexion/`). Un compte non administrateur est refusé (`COMPTE_NON_ADMIN`).
 
 **KYC (validation manuelle par l'admin)**
 
@@ -248,6 +250,7 @@ Préfixe `/api/v1/`. Toutes les réponses : `{ "statut": "success" | "failed", "
 | Domaine | Endpoints |
 |---|---|
 | Authentification | `POST auth/otp/demander/` · `POST auth/otp/verifier/` · `POST auth/jeton/rafraichir/` · `POST auth/deconnexion/` |
+| Authentification back-office | `POST auth/admin/connexion/` · `POST auth/admin/jeton/rafraichir/` · `POST auth/admin/deconnexion/` · `GET auth/admin/moi/` |
 | Profil | `GET/PATCH moi/` · `PATCH moi/mode/` · `GET moi/economies/` · `GET utilisateurs/{id}/` |
 | KYC | `GET kyc/` · `POST kyc/{type}/pieces/` · `POST kyc/{type}/soumettre/` |
 | Véhicules | `GET/POST vehicules/` · `GET/PATCH/DELETE vehicules/{id}/` |
@@ -256,4 +259,4 @@ Préfixe `/api/v1/`. Toutes les réponses : `{ "statut": "success" | "failed", "
 | Partage (public) | `GET partage/{jeton}/` |
 | Portefeuille (simulé) | `GET portefeuille/` · `GET portefeuille/moyens/` · `GET portefeuille/transactions/` · `POST portefeuille/recharger/` · `POST portefeuille/retirer/` |
 | Notifications | `POST notifications/appareils/` · `DELETE notifications/appareils/{jeton}/` |
-| Admin (`admin/…`) | `utilisateurs/` (+ `{id}/`, `suspendre/`, `reactiver/`) · `kyc/` (+ `{id}/`, `valider/`, `rejeter/`, `pieces/{id}/fichier/`) · `trajets/` · `reservations/` · `signalements/` (+ `{id}/traiter/`) · `indicateurs/` · `parametres/` (+ `{cle}/`) |
+| Admin (`admin/…`) | `tableau-de-bord/` · `indicateurs/` · `utilisateurs/` (+ `{id}/`, `suspendre/` avec motif, `reactiver/`) · `kyc/` (+ `{id}/`, `valider/`, `rejeter/`, `pieces/{id}/fichier/`) · `trajets/` (+ `{id}/`) · `reservations/` (+ `{id}/`) · `signalements/` (+ `{id}/`, `{id}/traiter/`) · `parametres/` (+ `{cle}/`) |
