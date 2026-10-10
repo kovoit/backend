@@ -1,5 +1,7 @@
 """Remplit la base locale avec 30 jours d'activité fictive, via les services métier.
 
+Usage : alimenter le back-office React (listes, tableaux de bord, files KYC et litiges).
+Pour simplement tester l'API mobile dans Swagger, utiliser plutôt `seed_demo`.
 Développement uniquement : refusé quand DEBUG=False. Pour recommencer : `manage.py flush`.
 """
 
@@ -15,8 +17,8 @@ from freezegun import freeze_time
 from apps.accounts import services as comptes
 from apps.accounts.repository import user_repository
 from apps.confiance import services as confiance
-from apps.core.demo import personnes
-from apps.core.demo.activite import a_heure, demander, journee, publier
+from apps.dashboard.demo import personnes
+from apps.dashboard.demo.activite import a_heure, demander, journee, publier
 from apps.portefeuille import services as portefeuille
 from apps.reservations import services as reservations
 

@@ -2,6 +2,7 @@
 
 Crée (sans doublon si relancée) un passager et un conducteur déjà vérifiés, un véhicule,
 un trajet publié pour demain, et affiche des jetons JWT prêts à coller dans « Authorize ».
+Pour remplir le back-office React avec un mois d'activité, utiliser plutôt `seed_backoffice`.
 """
 
 from datetime import timedelta

@@ -9,7 +9,7 @@ from datetime import date, datetime, time, timedelta
 from django.utils import timezone
 
 from apps.confiance import services as confiance
-from apps.core.demo.lieux import itineraire
+from apps.dashboard.demo.lieux import itineraire
 from apps.parametres.services import get_param
 from apps.reservations import services as reservations
 from apps.reservations.code_depart import calculer_code
