@@ -14,9 +14,11 @@ from apps.reservations.services.cloture import (
 )
 from apps.reservations.services.consultation import (
     get_reservation,
+    get_reservation_admin,
     lister_reservations,
     mes_reservations,
     reservations_du_trajet,
+    reservations_du_trajet_admin,
 )
 from apps.reservations.services.decision import accepter, refuser
 from apps.reservations.services.demande import demander_place
@@ -41,11 +43,13 @@ __all__ = [
     "declarer_absent",
     "demander_place",
     "get_reservation",
+    "get_reservation_admin",
     "lister_reservations",
     "mes_reservations",
     "passer_en_litige",
     "refuser",
     "reservations_du_trajet",
+    "reservations_du_trajet_admin",
     "saisir_code",
     "terminer_reservations_du_trajet",
     "trancher_litige",

@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.confiance.models import DecisionLitige, Note, Signalement
+from apps.confiance.models import Note, Signalement
 from apps.confiance.services import resume_confiance
 
 
@@ -57,14 +57,3 @@ class SignalementSerializer(serializers.ModelSerializer):
             "traite_le",
             "cree_le",
         ]
-
-
-class TraitementSerializer(serializers.Serializer):
-    resolution = serializers.CharField()
-    decision = serializers.ChoiceField(
-        choices=DecisionLitige.choices,
-        required=False,
-        allow_blank=True,
-        default="",
-        help_text="Obligatoire si la réservation est en litige.",
-    )

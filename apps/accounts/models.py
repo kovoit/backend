@@ -37,6 +37,7 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         max_length=10, choices=StatutCompte.choices, default=StatutCompte.ACTIF
     )
     suspendu_jusqu_au = models.DateTimeField("suspendu jusqu'au", null=True, blank=True)
+    motif_suspension = models.TextField("motif de suspension", blank=True)
     is_active = models.BooleanField("actif (Django)", default=True)
     is_staff = models.BooleanField("administrateur", default=False)
 

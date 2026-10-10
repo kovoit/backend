@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from django.db.models import Q
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 
 from apps.core.repository import BaseRepository
 from apps.reservations.models import STATUTS_ACTIFS, Reservation, StatutReservation
@@ -52,9 +53,20 @@ class ReservationRepository(BaseRepository[Reservation]):
     def a_cloturer(self, limite: datetime):
         return self.filter(statut=StatutReservation.TERMINEE, terminee_le__lte=limite)
 
-    def lister(self, statut: str | None = None):
+    def lister(self, statut: str | None = None, recherche: str | None = None, trajet_id=None):
+        """Back-office : les plus récentes d'abord ; recherche sur passager et conducteur."""
         queryset = self.queryset().order_by("-cree_le")
-        return queryset.filter(statut=statut) if statut else queryset
+        if statut:
+            queryset = queryset.filter(statut=statut)
+        if trajet_id:
+            queryset = queryset.filter(trajet_id=trajet_id)
+        if recherche:
+            correspond = Q()
+            for personne in ("passager", "trajet__conducteur"):
+                for champ in ("nom", "prenom", "telephone", "email"):
+                    correspond |= Q(**{f"{personne}__{champ}__icontains": recherche})
+            queryset = queryset.filter(correspond)
+        return queryset
 
     # --- Fiabilité (PRD §8) ---
 
@@ -64,14 +76,59 @@ class ReservationRepository(BaseRepository[Reservation]):
         ).count()
 
     def compter_incidents(self, utilisateur, depuis: datetime) -> int:
-        tardives = Q(annulee_par=utilisateur, annulation_tardive=True, annulee_le__gte=depuis)
-        absences = Q(passager=utilisateur, statut=StatutReservation.ABSENT, absent_le__gte=depuis)
-        return self.filter(tardives | absences).count()
+        return self.filter(
+            self._tardives(utilisateur, depuis) | self._absences(utilisateur, depuis)
+        ).count()
+
+    def compter_annulations_tardives(self, utilisateur, depuis: datetime) -> int:
+        return self.filter(self._tardives(utilisateur, depuis)).count()
+
+    def compter_absences(self, utilisateur, depuis: datetime) -> int:
+        return self.filter(self._absences(utilisateur, depuis)).count()
+
+    @staticmethod
+    def _tardives(utilisateur, depuis: datetime) -> Q:
+        return Q(annulee_par=utilisateur, annulation_tardive=True, annulee_le__gte=depuis)
+
+    @staticmethod
+    def _absences(utilisateur, depuis: datetime) -> Q:
+        return Q(passager=utilisateur, statut=StatutReservation.ABSENT, absent_le__gte=depuis)
+
+    def compter_engagements_a_venir(self, utilisateur, maintenant: datetime) -> int:
+        """Réservations à venir comme passager ou sur ses trajets de conducteur."""
+        return self.filter(
+            Q(passager=utilisateur) | Q(trajet__conducteur=utilisateur),
+            statut__in=[StatutReservation.DEMANDEE, StatutReservation.ACCEPTEE],
+            trajet__depart_le__gt=maintenant,
+        ).count()
 
     # --- Indicateurs ---
 
     def compter_transportes(self) -> int:
         return self.filter(statut__in=STATUTS_TRANSPORTES).count()
+
+    def transportes_par_jour(self, debut: datetime, fin: datetime) -> dict[date, int]:
+        """Passagers transportés par jour de départ du trajet (heure de Lomé)."""
+        lignes = (
+            self.filter(statut__in=STATUTS_TRANSPORTES, trajet__depart_le__range=(debut, fin))
+            .order_by()
+            .annotate(jour=TruncDate("trajet__depart_le"))
+            .values("jour")
+            .annotate(total=Count("id"))
+            .values_list("jour", "total")
+        )
+        return dict(lignes)
+
+    def compter_par_statut(self, debut: datetime, fin: datetime) -> dict[str, int]:
+        """Réservations créées sur la période, par statut actuel."""
+        lignes = (
+            self.filter(cree_le__range=(debut, fin))
+            .order_by()
+            .values("statut")
+            .annotate(total=Count("id"))
+            .values_list("statut", "total")
+        )
+        return dict(lignes)
 
 
 reservation_repository = ReservationRepository()

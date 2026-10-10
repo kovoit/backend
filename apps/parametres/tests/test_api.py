@@ -40,7 +40,11 @@ def test_admin_modifie_un_parametre(client_admin, admin, parametres_initialises)
         "reponse": corps["reponse"],
     }
     assert corps["reponse"]["valeur"] == 2
-    assert corps["reponse"]["modifie_par"] == str(admin.id)
+    assert corps["reponse"]["modifie_par"] == {
+        "id": str(admin.id),
+        "nom": admin.nom,
+        "prenom": admin.prenom,
+    }
     assert services.get_param("rayon_depart_km") == 2
 
 

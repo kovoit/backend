@@ -9,8 +9,14 @@ from apps.kyc.repository import consultation_repository, dossier_repository, pie
 from apps.notifications.services import notifier
 
 
-def lister_dossiers(statut: str | None = None, type_dossier: str | None = None):
-    return dossier_repository.lister(statut, type_dossier)
+def lister_dossiers(
+    statut: str | None = None, type_dossier: str | None = None, recherche: str | None = None
+):
+    return dossier_repository.lister(statut, type_dossier, recherche)
+
+
+def dossiers_soumis(utilisateur):
+    return dossier_repository.soumis_de(utilisateur)
 
 
 def get_dossier(dossier_id) -> KycDossier:

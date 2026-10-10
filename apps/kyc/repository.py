@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from apps.core.repository import BaseRepository
 from apps.kyc.models import KycConsultation, KycDossier, KycPiece, StatutKyc
 
@@ -12,6 +14,14 @@ class DossierRepository(BaseRepository[KycDossier]):
     def get_ou_creer(self, utilisateur, type_dossier: str) -> KycDossier:
         dossier, _ = self.model.objects.get_or_create(utilisateur=utilisateur, type=type_dossier)
         return dossier
+
+    def soumis_de(self, utilisateur):
+        """Lecture seule : dossiers déjà soumis au moins une fois (jamais de création)."""
+        return (
+            self.filter(utilisateur=utilisateur)
+            .exclude(statut=StatutKyc.NON_VERIFIE)
+            .order_by("type")
+        )
 
     def get_verrouille(self, utilisateur, type_dossier: str) -> KycDossier:
         """À appeler dans un `transaction.atomic()`."""
@@ -30,8 +40,22 @@ class DossierRepository(BaseRepository[KycDossier]):
             utilisateur=utilisateur, type=type_dossier, statut=StatutKyc.VERIFIE
         ).exists()
 
-    def lister(self, statut: str | None = None, type_dossier: str | None = None):
-        queryset = self.queryset().order_by("soumis_le", "cree_le")
+    def lister(
+        self,
+        statut: str | None = None,
+        type_dossier: str | None = None,
+        recherche: str | None = None,
+    ):
+        """Les plus anciens soumis d'abord : la file d'attente se traite dans l'ordre."""
+        # traite_par (clé facultative) jointe ici seulement : incompatible avec FOR UPDATE
+        queryset = self.queryset().select_related("traite_par").order_by("soumis_le", "cree_le")
+        if recherche:
+            queryset = queryset.filter(
+                Q(utilisateur__email__icontains=recherche)
+                | Q(utilisateur__nom__icontains=recherche)
+                | Q(utilisateur__prenom__icontains=recherche)
+                | Q(utilisateur__telephone__icontains=recherche)
+            )
         if statut:
             queryset = queryset.filter(statut=statut)
         if type_dossier:
@@ -40,6 +64,10 @@ class DossierRepository(BaseRepository[KycDossier]):
 
     def compter_verifies(self, type_dossier: str) -> int:
         return self.model.objects.filter(type=type_dossier, statut=StatutKyc.VERIFIE).count()
+
+    def compter_utilisateurs_verifies(self) -> int:
+        """Utilisateurs ayant au moins un dossier (passager ou conducteur) vérifié."""
+        return self.filter(statut=StatutKyc.VERIFIE).values("utilisateur").distinct().count()
 
 
 class PieceRepository(BaseRepository[KycPiece]):

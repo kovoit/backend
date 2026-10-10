@@ -34,6 +34,9 @@ class BaseRepository[M: models.Model]:
     def exists(self, *conditions: models.Q, **filtres) -> bool:
         return self.queryset().filter(*conditions, **filtres).exists()
 
+    def compter(self, *conditions: models.Q, **filtres) -> int:
+        return self.queryset().filter(*conditions, **filtres).count()
+
     def create(self, **donnees) -> M:
         return self.model._default_manager.create(**donnees)
 

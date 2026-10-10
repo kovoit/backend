@@ -1,7 +1,7 @@
 from drf_spectacular.utils import OpenApiParameter, PolymorphicProxySerializer, extend_schema
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN, CONNECTE, CompteActif
+from apps.accounts.api.permissions import CONNECTE, CompteActif
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 from apps.kyc.api.permissions import KycPassagerVerifie
@@ -78,26 +78,6 @@ class TrajetReservationsVue(APIView):
         reservations = services.reservations_du_trajet(
             request.user, pk, request.query_params.get("statut")
         )
-        return reponse_paginee(
-            request,
-            reservations,
-            s.ReservationConducteurSerializer,
-            "Réservations récupérées.",
-            self,
-        )
-
-
-class ReservationAdminListeVue(APIView):
-    permission_classes = ADMIN
-
-    @extend_schema(
-        tags=["admin - réservations"],
-        summary="Lister les réservations",
-        parameters=[FILTRE_STATUT],
-        responses=s.ReservationConducteurSerializer(many=True),
-    )
-    def get(self, request):
-        reservations = services.lister_reservations(request.query_params.get("statut"))
         return reponse_paginee(
             request,
             reservations,

@@ -22,5 +22,14 @@ def reservations_du_trajet(conducteur, trajet_id, statut: str | None = None):
     return reservation_repository.du_trajet(trajet, [statut] if statut else None)
 
 
-def lister_reservations(statut: str | None = None):
-    return reservation_repository.lister(statut)
+def reservations_du_trajet_admin(trajet):
+    """Back-office : toutes les réservations du trajet, quel que soit leur statut."""
+    return reservation_repository.du_trajet(trajet)
+
+
+def lister_reservations(statut: str | None = None, recherche: str | None = None, trajet_id=None):
+    return reservation_repository.lister(statut, recherche, trajet_id)
+
+
+def get_reservation_admin(reservation_id) -> Reservation:
+    return reservation_repository.get_by_id(reservation_id)

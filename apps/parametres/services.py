@@ -45,8 +45,11 @@ def get_param(cle: str) -> Any:
     return valeur
 
 
-def lister_parametres():
-    return parametre_repository.lister()
+def lister_parametres() -> list[Parametre]:
+    """Paramètres connus, dans l'ordre du registre (celui de l'écran du back-office)."""
+    ordre = {cle: rang for rang, cle in enumerate(PARAMETRES_PAR_DEFAUT)}
+    connus = [p for p in parametre_repository.lister() if p.cle in ordre]
+    return sorted(connus, key=lambda parametre: ordre[parametre.cle])
 
 
 def valider_valeur(cle: str, valeur: Any) -> None:
@@ -55,8 +58,14 @@ def valider_valeur(cle: str, valeur: Any) -> None:
         raise ValeurParametreInvalide(f"« {cle} » doit être un nombre.")
     if defaut.type_valeur == ENTIER and not isinstance(valeur, int):
         raise ValeurParametreInvalide(f"« {cle} » doit être un nombre entier.")
-    if valeur < 0:
-        raise ValeurParametreInvalide(f"« {cle} » doit être positif ou nul.")
+    if valeur < defaut.minimum:
+        # Écriture française : 0,1 km
+        minimum = str(defaut.minimum).replace(".", ",")
+        unite = f" {defaut.unite}" if defaut.unite else ""
+        raise ValeurParametreInvalide(
+            f"« {cle} » doit valoir au moins {minimum}{unite}.",
+            erreurs={"valeur": [f"Minimum : {minimum}{unite}."]},
+        )
 
 
 def modifier_param(cle: str, valeur: Any, par=None) -> Parametre:

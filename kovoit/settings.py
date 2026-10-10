@@ -106,6 +106,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "prive"))
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_ALLOW_CREDENTIALS = True  # cookie de refresh du back-office, origines ci-dessus seulement
 
 LOGGING = {
     "version": 1,
@@ -129,7 +130,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "300/min"},
+    "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "300/min", "connexion_admin": "5/min"},
 }
 
 SIMPLE_JWT = {
@@ -180,8 +181,7 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Kovoit <no-reply@kovoit.tg>")
 EMAIL_TIMEOUT = 10
 
-# Sécurité : actif dès que DEBUG est désactivé (production)
-if not DEBUG:
+if not DEBUG:  # sécurité : actif dès que DEBUG est désactivé (production)
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
     SESSION_COOKIE_SECURE = True

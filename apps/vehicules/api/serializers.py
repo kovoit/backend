@@ -27,4 +27,13 @@ class VehiculeResumeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Vehicule
-        fields = ["id", "type_vehicule", "marque", "modele", "couleur", "immatriculation", "photo"]
+        fields = [
+            "id",
+            "type_vehicule",
+            "marque",
+            "modele",
+            "couleur",
+            "immatriculation",
+            "nb_places",
+            "photo",
+        ]
