@@ -30,6 +30,7 @@ python manage.py seed_parametres           # valeurs de départ des paramètres
 python manage.py createsuperuser           # compte admin (email + mot de passe)
 python manage.py seed_demo                 # comptes passager/conducteur vérifiés + trajet + jetons JWT (DEBUG)
 python manage.py seed_backoffice           # 30 jours d'activité fictive pour le back-office React (DEBUG, exige un admin)
+python manage.py purger_demo               # supprime les données de seed_demo/seed_backoffice, garde admins et paramètres (--simuler, --oui)
 python manage.py runserver                 # API : /api/v1/  · Swagger : /api/docs/
 celery -A kovoit worker -l info --pool=solo   # worker (--pool=solo obligatoire sous Windows)
 celery -A kovoit beat -l info              # tâches planifiées

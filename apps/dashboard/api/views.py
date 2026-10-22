@@ -87,6 +87,10 @@ class JourSerializer(serializers.Serializer):
 
 class TableauDeBordSerializer(serializers.Serializer):
     periode = PeriodeSerializer()
+    donnees_demo = serializers.BooleanField(
+        help_text="Vrai si la base contient des comptes de démonstration (seed_demo, "
+        "seed_backoffice) : les indicateurs incluent alors leur activité fictive."
+    )
     indicateurs = IndicateursPeriodeSerializer()
     a_traiter = ATraiterSerializer()
     evolution = JourSerializer(many=True)

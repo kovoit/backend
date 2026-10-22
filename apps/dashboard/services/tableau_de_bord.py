@@ -4,8 +4,10 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 
+from apps.accounts.repository import user_repository
 from apps.confiance.models import StatutSignalement
 from apps.confiance.repository import signalement_repository
+from apps.dashboard.demo import COMPTES_DEMO
 from apps.kyc.models import StatutKyc, TypeDossier
 from apps.kyc.repository import dossier_repository
 from apps.portefeuille.repository import transaction_repository
@@ -34,6 +36,8 @@ def tableau_de_bord(periode: str) -> dict:
 
     return {
         "periode": {"code": periode, "debut": debut.date(), "fin": fin.date()},
+        # Comptes créés par seed_demo / seed_backoffice : les chiffres incluent leur activité
+        "donnees_demo": user_repository.exists(COMPTES_DEMO),
         "indicateurs": {
             "trajets_publies": trajet_repository.compter(cree_le__range=(debut, fin)),
             "trajets_termines": sum(trajets.values()),
