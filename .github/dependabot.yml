@@ -7,6 +7,10 @@ updates:
     groups:
       django:
         patterns: ["Django", "djangorestframework*", "drf-*", "django-*"]
+    ignore:
+      # Le projet reste sur Django 5.2 LTS : pas de saut de version majeure automatique.
+      - dependency-name: "Django"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
