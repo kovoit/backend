@@ -7,6 +7,7 @@ from apps.portefeuille.repository import transaction_repository
 from apps.portefeuille.services.commun import (
     SoldeInsuffisant,
     ecrire,
+    recharge_suggeree,
     solde,
     verifier_moyen,
     verrouiller,
@@ -31,6 +32,7 @@ def bloquer(reservation, moyen: str | None = None) -> int:
             message,
             erreurs={
                 "complement_a_payer": complement,
+                "recharge_suggeree": recharge_suggeree(complement),
                 "moyens_paiement": MoyenPaiement.values,
                 "recharge_requise": fournisseur.asynchrone,
             },

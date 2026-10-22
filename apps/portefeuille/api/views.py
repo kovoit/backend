@@ -22,13 +22,19 @@ MESSAGES = {
     "en_attente": "Validez le paiement sur votre téléphone pour terminer l'opération.",
     "echouee": "Le paiement n'a pas abouti.",
 }
+MESSAGE_RETRAIT_EN_ATTENTE = (
+    "Retrait enregistré : Kovoit effectue le versement sur votre compte Mobile Money."
+)
 
 
 def _resultat(request, ligne):
     """201 : opération validée ; 202 : en attente de confirmation Mobile Money."""
     donnees = {"transaction": ligne, "solde": services.solde(request.user)}
     statut = 201 if ligne.statut == "validee" else 202
-    return succes(MESSAGES[ligne.statut], ResultatOperationSerializer(donnees).data, status=statut)
+    message = MESSAGES[ligne.statut]
+    if ligne.type == "retrait" and ligne.statut == "en_attente":
+        message = MESSAGE_RETRAIT_EN_ATTENTE
+    return succes(message, ResultatOperationSerializer(donnees).data, status=statut)
 
 
 class PortefeuilleVue(APIView):

@@ -55,6 +55,9 @@ class ApercuPaiementSerializer(serializers.Serializer):
     montant_total = serializers.IntegerField(help_text="Prix + frais de service (F CFA)")
     solde_disponible = serializers.IntegerField()
     complement_a_payer = serializers.IntegerField(
-        help_text="À payer par Flooz ou Mixx à la réservation (0 si le solde suffit)"
+        help_text="Manque sur le portefeuille pour réserver (0 si le solde suffit)"
+    )
+    recharge_suggeree = serializers.IntegerField(
+        help_text="Montant de recharge à proposer : le complément, au moins recharge_min"
     )
     moyens_paiement = MoyenPaiementSerializer(many=True)

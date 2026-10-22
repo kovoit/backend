@@ -45,6 +45,7 @@ def test_apercu_paiement(utilisateur):
 
     assert apercu["solde_disponible"] == 500
     assert apercu["complement_a_payer"] == 300
+    assert apercu["recharge_suggeree"] == 500  # recharge minimale
     assert [m["code"] for m in apercu["moyens_paiement"]] == ["flooz", "mixx"]
 
 

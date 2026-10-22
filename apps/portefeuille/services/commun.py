@@ -71,13 +71,22 @@ def ecrire(
     return None
 
 
+def recharge_suggeree(complement: int) -> int:
+    """Montant à proposer pour combler un complément : au moins la recharge minimale."""
+    from apps.parametres.services import get_param
+
+    return max(complement, get_param("recharge_min")) if complement > 0 else 0
+
+
 def apercu_paiement(utilisateur, montant: int) -> dict:
     """Écran « Détails du trajet » : ce qui sera pris sur le portefeuille et le complément."""
     disponible = max(solde(utilisateur).disponible, 0)
+    complement = max(montant - disponible, 0)
     return {
         "montant_total": montant,
         "solde_disponible": disponible,
-        "complement_a_payer": max(montant - disponible, 0),
+        "complement_a_payer": complement,
+        "recharge_suggeree": recharge_suggeree(complement),
         "moyens_paiement": moyens_paiement(),
     }
 

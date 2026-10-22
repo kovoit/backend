@@ -165,3 +165,12 @@ def test_le_jeton_marchand_n_est_jamais_journalise(utilisateur, paygate):
 
     journal = str(list(EvenementAudit.objects.values()))
     assert "jeton-marchand-secret" not in journal
+
+
+def test_message_du_retrait_en_attente(client_de, passager, paygate):
+    reponse = client_de(passager).post(
+        "/api/v1/portefeuille/retirer/", {"montant": 1000, "moyen": "flooz"}
+    )
+
+    assert reponse.status_code == 202
+    assert "Kovoit effectue le versement" in reponse.json()["message"]
