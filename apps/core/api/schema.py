@@ -14,6 +14,28 @@ ENUM_NAME_OVERRIDES = {
     "TypeTransactionEnum": "apps.portefeuille.models.TypeTransaction",
     "StatutTransactionEnum": "apps.portefeuille.models.StatutTransaction",
     "MoyenPaiementEnum": "apps.portefeuille.models.MoyenPaiement",
+    "RoleAuditEnum": "apps.audit.models.Role",
+    "CategorieAuditEnum": "apps.audit.models.Categorie",
+    "ResultatAuditEnum": "apps.audit.models.Resultat",
+    "GraviteAuditEnum": "apps.audit.models.Gravite",
+    "CanalAuditEnum": "apps.audit.models.Canal",
+}
+
+# Réglages drf-spectacular (repris par SPECTACULAR_SETTINGS dans kovoit/settings.py)
+REGLAGES_SPECTACULAR = {
+    "TITLE": "API Kovoit",
+    "DESCRIPTION": (
+        "API backend Kovoit (covoiturage urbain à Lomé). Toutes les réponses suivent "
+        "l'enveloppe { statut: success | failed, message, reponse }."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": ENUM_NAME_OVERRIDES,
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "apps.core.api.schema.envelopper_reponses",
+    ],
 }
 
 SCHEMA_ECHEC = {

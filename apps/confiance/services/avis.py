@@ -3,6 +3,7 @@
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.confiance.models import Note, Signalement, StatutSignalement
 from apps.confiance.repository import note_repository, signalement_repository
 from apps.core.exceptions import Conflit, DonneesInvalides
@@ -25,13 +26,15 @@ def noter(auteur, reservation_id, note: int, commentaire: str = "") -> Note:
         raise Conflit("La note est possible après le trajet.", code="NOTE_PREMATUREE")
     try:
         with transaction.atomic():
-            return note_repository.create(
+            avis = note_repository.create(
                 reservation=reservation,
                 auteur=auteur,
                 cible=_autre_partie(reservation, auteur),
                 note=note,
                 commentaire=commentaire,
             )
+            journaliser("avis.noter", ressource=reservation, details={"note": note})
+            return avis
     except IntegrityError as exc:
         raise Conflit("Vous avez déjà noté ce trajet.", code="DEJA_NOTE") from exc
 
@@ -48,14 +51,21 @@ def signaler(auteur, reservation_id, motif: str) -> Signalement:
         )
     with transaction.atomic():
         reservation = reservation_repository.get_verrouillee(reservation.id)
-        if reservation.statut == S.TERMINEE:
+        litige = reservation.statut == S.TERMINEE
+        if litige:
             passer_en_litige(reservation)
-        return signalement_repository.create(
+        signalement = signalement_repository.create(
             reservation=reservation,
             auteur=auteur,
             cible=_autre_partie(reservation, auteur),
             motif=motif,
         )
+        journaliser(
+            "signalement.creer",
+            ressource=reservation,
+            details={"signalement_id": signalement.id, "litige": litige},
+        )
+        return signalement
 
 
 def dernieres_notes(utilisateur, nombre: int = 5):
@@ -97,5 +107,12 @@ def traiter_signalement(admin, signalement_id, resolution: str, decision: str = 
             decision=decision,
             traite_le=timezone.now(),
             traite_par=admin,
+        )
+        journaliser(
+            "signalement.traiter",
+            ressource=signalement,
+            acteur=admin,
+            changements={"statut": [StatutSignalement.OUVERT, StatutSignalement.TRAITE]},
+            details={"reservation_id": reservation.id, "decision": decision},
         )
     return signalement_repository.get_by_id(signalement.id)

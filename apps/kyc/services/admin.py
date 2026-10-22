@@ -3,6 +3,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, DonneesInvalides
 from apps.kyc.models import KycDossier, KycPiece, StatutKyc
 from apps.kyc.repository import consultation_repository, dossier_repository, piece_repository
@@ -24,6 +25,7 @@ def get_dossier(dossier_id) -> KycDossier:
 
 
 def _traiter(dossier_id, admin, statut: str, motif: str = "") -> KycDossier:
+    action = "kyc.valider" if statut == StatutKyc.VERIFIE else "kyc.rejeter"
     with transaction.atomic():
         dossier = dossier_repository.get_for_update(dossier_id)
         if dossier.statut != StatutKyc.EN_ATTENTE:
@@ -32,6 +34,17 @@ def _traiter(dossier_id, admin, statut: str, motif: str = "") -> KycDossier:
             )
         dossier_repository.update(
             dossier, statut=statut, motif_rejet=motif, traite_le=timezone.now(), traite_par=admin
+        )
+        journaliser(
+            action,
+            ressource=dossier,
+            acteur=admin,
+            changements={"statut": [StatutKyc.EN_ATTENTE, statut]},
+            details={
+                "type_dossier": dossier.type,
+                "utilisateur_id": dossier.utilisateur_id,
+                "motif": motif,
+            },
         )
     return dossier_repository.get_by_id(dossier_id)
 
@@ -62,5 +75,12 @@ def rejeter(dossier_id, admin, motif: str) -> KycDossier:
 def consulter_piece(piece_id, admin) -> KycPiece:
     """Renvoie la pièce et journalise la consultation (données sensibles)."""
     piece = piece_repository.get_by_id(piece_id)
-    consultation_repository.create(piece=piece, admin=admin)
+    with transaction.atomic():
+        consultation_repository.create(piece=piece, admin=admin)
+        journaliser(
+            "kyc.consulter_piece",
+            ressource=piece,
+            acteur=admin,
+            details={"type_piece": piece.type_piece, "dossier_id": piece.dossier_id},
+        )
     return piece

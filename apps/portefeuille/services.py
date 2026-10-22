@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from django.db import transaction
 
 from apps.accounts.repository import user_repository
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, DonneesInvalides
 from apps.parametres.services import get_param
 from apps.portefeuille.models import MoyenPaiement
@@ -85,8 +86,14 @@ def recharger(utilisateur, montant: int, moyen: str) -> Solde:
     _verifier_moyen(moyen)
     if montant < get_param("recharge_min"):
         raise DonneesInvalides(f"Recharge minimum : {get_param('recharge_min')} F CFA.")
-    reference = provider.collecter(utilisateur, montant, moyen)
-    _ecrire(utilisateur, T.RECHARGE, montant, reference=reference, moyen=moyen)
+    with transaction.atomic():
+        reference = provider.collecter(utilisateur, montant, moyen)
+        _ecrire(utilisateur, T.RECHARGE, montant, reference=reference, moyen=moyen)
+        journaliser(
+            "portefeuille.recharger",
+            ressource=utilisateur,
+            details={"montant": montant, "moyen": moyen, "reference": reference},
+        )
     return solde(utilisateur)
 
 
@@ -100,6 +107,11 @@ def retirer(utilisateur, montant: int, moyen: str) -> Solde:
             raise SoldeInsuffisant("Solde disponible insuffisant pour ce retrait.")
         reference = provider.verser(utilisateur, montant, moyen)
         _ecrire(utilisateur, T.RETRAIT, montant, reference=reference, moyen=moyen)
+        journaliser(
+            "portefeuille.retirer",
+            ressource=utilisateur,
+            details={"montant": montant, "moyen": moyen, "reference": reference},
+        )
     return solde(utilisateur)
 
 

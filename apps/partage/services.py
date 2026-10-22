@@ -1,5 +1,8 @@
 import secrets
 
+from django.db import transaction
+
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, RessourceIntrouvable
 from apps.partage.models import LienPartage
 from apps.partage.repository import lien_repository
@@ -21,7 +24,13 @@ def creer_lien(passager, reservation_id) -> LienPartage:
             "Le partage est possible une fois la réservation acceptée.", code="PARTAGE_IMPOSSIBLE"
         )
     lien = lien_repository.get_or_none(reservation=reservation)
-    return lien or lien_repository.create(reservation=reservation, jeton=secrets.token_urlsafe(32))
+    if lien:
+        return lien
+    with transaction.atomic():
+        lien = lien_repository.create(reservation=reservation, jeton=secrets.token_urlsafe(32))
+        # Le jeton du lien est un secret : seule la réservation est journalisée
+        journaliser("partage.creer_lien", ressource=reservation, role="passager")
+    return lien
 
 
 def consulter(jeton: str) -> LienPartage:

@@ -3,6 +3,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, RessourceIntrouvable
 from apps.trajets.models import StatutTrajet, Trajet
 from apps.trajets.repository import trajet_repository
@@ -53,7 +54,8 @@ def marquer_en_cours(trajet: Trajet) -> None:
         trajet_repository.update(trajet, statut=StatutTrajet.EN_COURS)
 
 
-def annuler(conducteur, trajet_id) -> Trajet:
+def annuler(conducteur, trajet_id, cause: str = "") -> Trajet:
+    """`cause` : « suspension » quand l'annulation découle d'une suspension du compte."""
     from apps.reservations.services import annuler_reservations_du_trajet
 
     trajet = get_trajet_du_conducteur(conducteur, trajet_id)
@@ -63,6 +65,7 @@ def annuler(conducteur, trajet_id) -> Trajet:
             raise Conflit("Ce trajet ne peut plus être annulé.", code="TRAJET_NON_ANNULABLE")
         trajet_repository.update(trajet, statut=StatutTrajet.ANNULE)
         annuler_reservations_du_trajet(trajet, conducteur)
+        journaliser("trajet.annuler", ressource=trajet, role="conducteur", details={"cause": cause})
     return trajet_repository.get_by_id(trajet.id)
 
 
@@ -76,6 +79,7 @@ def terminer(conducteur, trajet_id) -> Trajet:
             raise Conflit("Ce trajet est déjà terminé ou annulé.", code="TRAJET_CLOS")
         terminer_reservations_du_trajet(trajet)
         trajet_repository.update(trajet, statut=StatutTrajet.TERMINE)
+        journaliser("trajet.terminer", ressource=trajet, role="conducteur")
     return trajet_repository.get_by_id(trajet.id)
 
 
@@ -91,4 +95,4 @@ def mettre_a_jour_position(conducteur, trajet_id, lat: float, lng: float) -> Tra
 def annuler_trajets_a_venir(conducteur) -> None:
     """Compte suspendu : annule ses trajets à venir (et les réservations associées)."""
     for trajet in trajet_repository.a_venir_de_conducteur(conducteur, timezone.now()):
-        annuler(conducteur, trajet.id)
+        annuler(conducteur, trajet.id, cause="suspension")

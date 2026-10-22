@@ -69,7 +69,8 @@ backend/
     ├── partage/       # lien public temporaire « Partager mon trajet »
     ├── notifications/ # EmailSender (Gmail SMTP), PushSender (FCM), Fake
     ├── portefeuille/  # Transaction (journal) + PaiementProvider simulé
-    └── dashboard/     # indicateurs, tableau de bord admin, économies conducteur, données de démo (demo/, seed_*)
+    ├── dashboard/     # indicateurs, tableau de bord admin, économies conducteur, données de démo (demo/, seed_*)
+    └── audit/         # journal d'audit en ajout seul : journaliser(), refus de l'API, flux temps réel, rétention
 ```
 
 ### Couches (obligatoires, sens unique)
@@ -141,7 +142,8 @@ apps/<app>/
 5. **Temps :** `USE_TZ = True`, `TIME_ZONE = "Africa/Lome"`, toujours `timezone.now()`.
 6. **Secrets :** uniquement via variables d'environnement (`.env`, jamais commité). `.env.example` tenu à jour.
 7. **Fournisseurs externes** (email, push, routage, paiement) : toujours derrière une interface + implémentation `Fake` utilisée en test. Aucun test n'appelle un service réel.
-8. **Hors MVP :** ne rien implémenter hors périmètre (messagerie, KYC automatique/OCR, trajets interurbains, trajets récurrents, vrai Mobile Money, offre entreprises).
+8. **Journal d'audit (`apps/audit`) :** toute action métier ou administrative importante appelle `journaliser("<action>", ressource=…)` **dans la transaction de l'opération** (pas de succès sans trace). L'action doit figurer dans `audit/catalogue.py` (`ACTIONS`, et `ROUTES` pour relier la route d'écriture à ses refus). Les refus, accès refusés et erreurs 500 sont journalisés automatiquement par le gestionnaire d'exceptions. Acteur = utilisateur authentifié par le serveur ; canal = claim signé `canal` du JWT (`mobile` posé par l'OTP, `web` par la connexion admin), jamais une donnée du client. Détails : champs choisis un par un, jamais de secret, code, jeton ni contenu de pièce KYC (`audit/securite.py` masque en second rempart). Journal non modifiable (modèle + trigger PostgreSQL) ; seule suppression : `purger_expires` (rétention `audit_retention_jours`, tâche Celery quotidienne) et `purger_demo`.
+9. **Hors MVP :** ne rien implémenter hors périmètre (messagerie, KYC automatique/OCR, trajets interurbains, trajets récurrents, vrai Mobile Money, offre entreprises).
 
 ## 6. Authentification — OTP email via Gmail SMTP
 

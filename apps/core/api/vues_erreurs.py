@@ -14,4 +14,7 @@ def page_introuvable(request, exception=None):
 
 
 def erreur_serveur(request):
+    from apps.audit.services import journaliser_erreur_api
+
+    journaliser_erreur_api("ERREUR_INTERNE", 500, metier=False)
     return JsonResponse(enveloppe_echec(MESSAGE_ERREUR_INTERNE, "ERREUR_INTERNE"), status=500)

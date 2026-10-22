@@ -11,6 +11,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.accounts.repository import otp_repository, user_repository
+from apps.audit.services import purger_acteurs
 from apps.dashboard.demo import COMPTES_DEMO
 from apps.kyc.repository import piece_repository
 from apps.portefeuille.repository import transaction_repository
@@ -97,6 +98,8 @@ def purger() -> dict[str, int]:
             ids = list(selections[nom].values_list("id", flat=True))
             repository.filter(id__in=ids).delete()
         otp_repository.filter(_emails_demo()).delete()
+        # Journal d'audit : seule voie de suppression autorisée (purge contrôlée)
+        bilan["evenements_audit"] = purger_acteurs(list(comptes.values_list("id", flat=True)))
         comptes.delete()
         transaction.on_commit(lambda: _effacer(fichiers))
     bilan["fichiers"] = len(fichiers)

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import environ
 
-from apps.core.api.schema import ENUM_NAME_OVERRIDES
+from apps.core.api.schema import REGLAGES_SPECTACULAR
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Apps Kovoit
     "apps.core",
+    "apps.audit",
     "apps.accounts",
     "apps.parametres",
     "apps.notifications",
@@ -47,6 +48,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Identifiant de corrélation (X-Request-ID) et contexte du journal d'audit
+    "apps.audit.contexte.ContexteAuditMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -106,6 +109,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "prive"))
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_EXPOSE_HEADERS = ["X-Request-ID"]  # corrélation avec le journal d'audit
 CORS_ALLOW_CREDENTIALS = True  # cookie de refresh du back-office, origines ci-dessus seulement
 
 LOGGING = {
@@ -141,21 +145,7 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": True,
 }
 
-SPECTACULAR_SETTINGS = {
-    "TITLE": "API Kovoit",
-    "DESCRIPTION": (
-        "API backend Kovoit (covoiturage urbain à Lomé). Toutes les réponses suivent "
-        "l'enveloppe { statut: success | failed, message, reponse }."
-    ),
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
-    "COMPONENT_SPLIT_REQUEST": True,
-    "ENUM_NAME_OVERRIDES": ENUM_NAME_OVERRIDES,
-    "POSTPROCESSING_HOOKS": [
-        "drf_spectacular.hooks.postprocess_schema_enums",
-        "apps.core.api.schema.envelopper_reponses",
-    ],
-}
+SPECTACULAR_SETTINGS = dict(REGLAGES_SPECTACULAR)  # voir apps/core/api/schema.py
 
 # Celery
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")

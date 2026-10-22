@@ -16,6 +16,7 @@ GROUPES = {
     "reservation": "Réservation, annulation et clôture",
     "fiabilite": "Fiabilité et suspension",
     "otp": "Connexion par code (OTP)",
+    "audit": "Journal d'audit",
 }
 
 
@@ -107,5 +108,13 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
     ),
     "otp_max_par_heure": Defaut(
         5, ENTIER, "Nombre max d'OTP envoyés par heure et par email.", "otp", "codes", 1
+    ),
+    "audit_retention_jours": Defaut(
+        365,
+        ENTIER,
+        "Durée de conservation des événements du journal d'audit (jours).",
+        "audit",
+        "jours",
+        30,
     ),
 }

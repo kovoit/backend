@@ -18,4 +18,8 @@ app.conf.beat_schedule = {
         "task": "apps.accounts.tasks.reactiver_suspensions",
         "schedule": 60 * 60,
     },
+    "retention-du-journal-d-audit": {
+        "task": "apps.audit.tasks.purger_journal_expire",
+        "schedule": 24 * 60 * 60,
+    },
 }

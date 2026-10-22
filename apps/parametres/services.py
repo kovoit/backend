@@ -6,6 +6,7 @@ from typing import Any
 from django.core.cache import cache
 from django.db import transaction
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import DonneesInvalides, RessourceIntrouvable
 from apps.parametres.defauts import ENTIER, PARAMETRES_PAR_DEFAUT, Defaut
 from apps.parametres.models import Parametre
@@ -74,7 +75,11 @@ def modifier_param(cle: str, valeur: Any, par=None) -> Parametre:
     with transaction.atomic():
         parametre_repository.creer_si_absent(cle, defaut.valeur, defaut.description)
         parametre = parametre_repository.get_for_update(cle)
+        ancienne = parametre.valeur
         parametre_repository.update(parametre, valeur=valeur, modifie_par=par)
+        journaliser(
+            "parametre.modifier", ressource_id=cle, changements={"valeur": [ancienne, valeur]}
+        )
     cache.delete(_cle_cache(cle))
     return parametre
 

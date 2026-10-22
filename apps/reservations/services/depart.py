@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, DonneesInvalides
 from apps.parametres.services import get_param
 from apps.portefeuille import services as portefeuille
@@ -45,6 +46,7 @@ def saisir_code(conducteur, reservation_id, code: str) -> Reservation:
             transitionner(reservation, StatutReservation.EN_COURS)
             portefeuille.debiter(reservation)
             marquer_en_cours(trajet_repository.get_verrouille(reservation.trajet_id))
+            journaliser("reservation.saisir_code", ressource=reservation, role="conducteur")
         else:
             essais = reservation.essais_code + 1
             reservation_repository.update(reservation, essais_code=essais)
@@ -75,6 +77,13 @@ def declarer_absent(conducteur, reservation_id, lat: float, lng: float) -> Reser
         transitionner(reservation, StatutReservation.ABSENT, absence_lat=lat, absence_lng=lng)
         portefeuille.debiter(reservation)
         portefeuille.crediter_conducteur(reservation)
+        # Position au moment de la déclaration seulement (preuve d'attente), jamais en continu
+        journaliser(
+            "reservation.declarer_absent",
+            ressource=reservation,
+            role="conducteur",
+            details={"lat": round(lat, 4), "lng": round(lng, 4)},
+        )
 
     notifier_passager(
         reservation,

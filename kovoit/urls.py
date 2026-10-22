@@ -31,6 +31,7 @@ API_ADMIN = [
     "apps.reservations.api.admin_urls",
     "apps.confiance.api.admin_urls",
     "apps.dashboard.api.admin_urls",
+    "apps.audit.api.admin_urls",
 ]
 
 urlpatterns = [

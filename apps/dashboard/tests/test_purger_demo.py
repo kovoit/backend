@@ -3,6 +3,7 @@ from django.core.management import CommandError, call_command
 
 from apps.accounts.models import User
 from apps.accounts.tests.factories import UserFactory
+from apps.audit.models import EvenementAudit
 from apps.kyc.models import KycDossier, KycPiece
 from apps.parametres.models import Parametre
 from apps.portefeuille import services as portefeuille
@@ -47,6 +48,8 @@ def test_supprime_les_donnees_de_demo_et_garde_le_reste(
     assert not any(tmp_path.rglob("*.png"))
     assert not any(path.is_dir() for path in (tmp_path / "kyc").iterdir())
     assert Parametre.objects.count() == parametres
+    demo = EvenementAudit.objects.exclude(acteur_id__in=restants).exclude(acteur_id=None)
+    assert not demo.exists()
 
 
 def test_simuler_ne_supprime_rien(en_dev):

@@ -54,6 +54,6 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"Supprimé : {bilan['comptes']} comptes, {bilan['trajets']} trajets, "
                 f"{bilan['reservations']} réservations, {bilan['transactions']} transactions, "
-                f"{bilan['fichiers']} fichiers."
+                f"{bilan['evenements_audit']} événements d'audit, {bilan['fichiers']} fichiers."
             )
         )

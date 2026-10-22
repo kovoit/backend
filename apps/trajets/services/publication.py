@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import DonneesInvalides
 from apps.routage.services import distance_route_km
 from apps.tarification.services import prix_par_place
@@ -55,4 +56,15 @@ def publier(
             prix_place=prix_par_place(distance),
         )
         point_repository.creer_pour(trajet, points)
+        journaliser(
+            "trajet.publier",
+            ressource=trajet,
+            role="conducteur",
+            details={
+                "depart_le": depart_le,
+                "places": places,
+                "prix_place": trajet.prix_place,
+                "distance_km": distance,
+            },
+        )
     return trajet_repository.get_by_id(trajet.id)

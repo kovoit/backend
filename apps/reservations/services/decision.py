@@ -2,6 +2,7 @@
 
 from django.db import transaction
 
+from apps.audit.services import journaliser
 from apps.portefeuille import services as portefeuille
 from apps.reservations.code_depart import nouveau_sel
 from apps.reservations.models import Reservation, StatutReservation
@@ -23,6 +24,7 @@ def accepter(conducteur, reservation_id) -> Reservation:
         trajet = trajet_repository.get_verrouille(reservation.trajet_id)
         transitionner(reservation, StatutReservation.ACCEPTEE, code_depart_sel=nouveau_sel())
         retirer_place(trajet)
+        journaliser("reservation.accepter", ressource=reservation, role="conducteur")
 
     notifier_passager(
         reservation,
@@ -38,6 +40,7 @@ def refuser(conducteur, reservation_id) -> Reservation:
         reservation = verrouiller_pour_conducteur(conducteur, reservation_id)
         transitionner(reservation, StatutReservation.REFUSEE)
         portefeuille.debloquer(reservation)
+        journaliser("reservation.refuser", ressource=reservation, role="conducteur")
 
     notifier_passager(
         reservation,
