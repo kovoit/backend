@@ -20,6 +20,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "reservation",
             "reference_externe",
             "statut",
+            "telephone",
             "cree_le",
         ]
 
@@ -27,6 +28,20 @@ class TransactionSerializer(serializers.ModelSerializer):
 class OperationMobileMoneySerializer(serializers.Serializer):
     montant = serializers.IntegerField(min_value=1, help_text="Montant en F CFA")
     moyen = serializers.ChoiceField(choices=MoyenPaiement.choices, help_text="flooz ou mixx")
+    telephone = serializers.RegexField(
+        r"^\+?[0-9 ]{8,20}$",
+        required=False,
+        default="",
+        help_text="Numéro Mobile Money (par défaut : téléphone du profil)",
+    )
+
+
+class ResultatOperationSerializer(serializers.Serializer):
+    """Statut `en_attente` : le client valide le paiement sur son téléphone ; l'app interroge
+    ensuite GET portefeuille/transactions/{id}/ jusqu'à `validee` ou `echouee`."""
+
+    transaction = TransactionSerializer()
+    solde = SoldeSerializer()
 
 
 class MoyenPaiementSerializer(serializers.Serializer):

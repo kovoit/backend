@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.kyc",
     "apps.vehicules",
     "apps.routage",
+    "apps.lieux",
     "apps.tarification",
     "apps.trajets",
     "apps.reservations",
@@ -160,6 +161,15 @@ OSRM_URL = env("OSRM_URL", default="https://router.project-osrm.org")
 FIREBASE_CREDENTIALS = env("FIREBASE_CREDENTIALS", default="")
 _PUSH = "fcm.FcmPushSender" if FIREBASE_CREDENTIALS else "push.JournalPushSender"
 NOTIFICATIONS_PUSH_SENDER = env("NOTIFICATIONS_PUSH_SENDER", default=f"apps.notifications.{_PUSH}")
+
+# Paiement Mobile Money : simulation par défaut ; PayGate dès que le jeton marchand est fourni
+PAYGATE_AUTH_TOKEN = env("PAYGATE_AUTH_TOKEN", default="")
+PAYGATE_URL = env("PAYGATE_URL", default="https://paygateglobal.com")
+PAYGATE_CALLBACK_SECRET = env("PAYGATE_CALLBACK_SECRET", default="")
+_PAIEMENT = (
+    "paygate.PayGateProvider" if PAYGATE_AUTH_TOKEN else "provider.SimulationPaiementProvider"
+)
+PAIEMENT_PROVIDER = env("PAIEMENT_PROVIDER", default=f"apps.portefeuille.{_PAIEMENT}")
 
 # Email (Gmail SMTP en production, console en développement)
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")

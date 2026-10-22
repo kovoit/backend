@@ -44,6 +44,14 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
     "retrait_min": Defaut(
         500, ENTIER, "Montant minimum d'un retrait simulé (F CFA).", "prix", "F CFA"
     ),
+    "paiement_attente_max_min": Defaut(
+        60,
+        ENTIER,
+        "Délai maximal de confirmation d'un paiement Mobile Money (min).",
+        "prix",
+        "min",
+        5,
+    ),
     "rayon_depart_km": Defaut(
         1.5,
         DECIMAL,

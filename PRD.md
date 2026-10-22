@@ -23,7 +23,7 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 | Vérification du compte | OTP par SMS | **OTP par email via Gmail SMTP**. Téléphone obligatoire mais non vérifié |
 | Notifications | Push, SMS si app fermée | Push, **email** si app fermée |
 | Tarification | Grille 200 / 300 / 500 F par tranche | **À définir plus tard** — prix temporaire = paramètre `prix_simulation` |
-| Paiement | Espèces ou portefeuille | **Portefeuille simulé** + complément **Flooz (Moov Africa)** ou **Mixx (Togocom, ex-T-Money)** à la réservation |
+| Paiement | Espèces ou portefeuille | **Portefeuille** alimenté par **PayGate Global** (Flooz, Mixx) ; **pas d'espèces** (décision du 22/10/2026). Sans jeton marchand : simulation |
 | KYC | Obligatoire avant de réserver / publier | **Non bloquant à l'inscription** : fait depuis le Profil ; réserver / publier restent verrouillés tant qu'il n'est pas validé |
 | Distances | Google Maps ou OSRM | **OSRM** |
 | Périmètre de ce dépôt | — | **Backend uniquement** (API pour Flutter et admin React) |
@@ -39,7 +39,7 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 - Voir son code de départ et le donner au conducteur à la prise en charge.
 - Confirmer l'arrivée ; noter le conducteur ; signaler un problème.
 - Partager son trajet en cours avec un proche.
-- Recharger (simulé) et consulter son portefeuille.
+- Recharger son portefeuille (Flooz ou Mixx via PayGate) et le consulter.
 
 ### Conducteur (tout ce que fait le passager, plus)
 - Soumettre son KYC conducteur ; déclarer son véhicule.
@@ -48,7 +48,7 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 - Accepter / refuser les demandes ; saisir le code de départ de chaque passager.
 - Déclarer un passager absent ; clôturer le trajet ; noter ses passagers.
 - Voir ses économies : par trajet et cumul du mois.
-- Retirer ses gains (simulé).
+- Retirer ses gains vers Flooz ou Mixx (versés manuellement par Kovoit tant que le versement PayGate n'est pas branché).
 
 ### Administrateur (API `/api/v1/admin/` pour l'admin React)
 - Valider / rejeter les dossiers KYC avec motif.
@@ -131,21 +131,24 @@ litige   → cloturee (décision admin)
 - Chaque changement de statut notifie l'autre partie (push, sinon email).
 - Chaque statut est horodaté.
 
-## 7. Prix et paiement (simulation)
+## 7. Prix et paiement
 
 - **Prix :** algorithme à définir plus tard. En attendant, `prix = prix_simulation` (paramètre) et `frais_service = frais_service` (paramètre, 0 pendant le pilote). Le prix est **toujours fixé par le backend**, jamais saisi par le conducteur ni recalculé par le client.
-- **Portefeuille simulé :** aucun argent réel, provider `Simulation`.
+- **Portefeuille + PayGate Global** (Flooz, Mixx), sans espèces. Sans `PAYGATE_AUTH_TOKEN` : provider `Simulation` (aucun argent réel).
+- **Recharge PayGate :** la transaction est créée `en_attente`, le client valide sur son téléphone, puis elle passe `validee` (ou `echouee` : expiré, annulé, délai `paiement_attente_max_min` dépassé). Seules les transactions validées comptent dans le solde. La confirmation est toujours revérifiée auprès de PayGate (callback, interrogation par l'app, tâche planifiée).
+- **Complément à la réservation :** avec PayGate, il n'est pas encaissé pendant la demande : refus `SOLDE_INSUFFISANT` avec `complement_a_payer` et `recharge_requise: true` ; l'app fait recharger le complément puis renvoie la demande.
+- **Retrait :** retenu immédiatement (`en_attente`, compté comme déduit), versé manuellement par Kovoit (Django admin → Transactions → « Retrait versé »), ou refusé (le montant redevient disponible).
 
 | Événement | Mouvements |
 |---|---|
-| Recharge (simulée, Flooz ou Mixx) | `recharge` (moyen enregistré) |
+| Recharge (Flooz ou Mixx) | `recharge` `en_attente` puis `validee` à la confirmation PayGate |
 | Demande de place | `blocage` du montant sur le portefeuille ; s'il manque de l'argent, le complément est payé par Flooz ou Mixx (`recharge` du complément puis `blocage`). Sans moyen choisi : refus `SOLDE_INSUFFISANT` avec `complement_a_payer` |
 | Refus / annulation | `deblocage` |
 | Code de départ saisi | `deblocage` + `debit` passager |
 | Clôture | `credit` conducteur |
 | Absence | `deblocage` + `debit` passager + `credit` conducteur |
 | Litige | montant gelé jusqu'à décision admin (`credit` conducteur ou `remboursement` passager) |
-| Retrait (simulé, vers Flooz ou Mixx) | `retrait` conducteur |
+| Retrait (vers Flooz ou Mixx) | `retrait` `en_attente` (déjà déduit) puis `validee` au versement |
 
 Le solde n'est jamais stocké : il est calculé depuis le journal des transactions.
 
@@ -233,7 +236,7 @@ Au-delà de `seuil_incidents` incidents sur 30 jours : suspension de `duree_susp
 
 ## 13. Hors périmètre MVP
 
-Algorithme de prix définitif, paiement réel (Mobile Money, agrégateur), passagers pris n'importe où sur l'itinéraire, trajets récurrents, messagerie, KYC automatique / OCR, offre entreprises et écoles, abonnement conducteur, trajets interurbains, vérification du téléphone par SMS.
+Algorithme de prix définitif, versement automatique des retraits, passagers pris n'importe où sur l'itinéraire, trajets récurrents, messagerie, KYC automatique / OCR, offre entreprises et écoles, abonnement conducteur, trajets interurbains, vérification du téléphone par SMS.
 
 ## 14. Questions ouvertes
 
@@ -257,6 +260,6 @@ Préfixe `/api/v1/`. Toutes les réponses : `{ "statut": "success" | "failed", "
 | Trajets | `POST trajets/` · `GET trajets/recherche/` · `GET trajets/mes-trajets/` · `GET trajets/{id}/` · `GET trajets/{id}/reservations/` · `POST trajets/{id}/position/` · `POST trajets/{id}/terminer/` · `POST trajets/{id}/annuler/` |
 | Réservations | `GET/POST reservations/` · `GET reservations/{id}/` · `POST reservations/{id}/accepter/` · `refuser/` · `annuler/` · `code-depart/` · `absent/` · `confirmer-arrivee/` · `note/` · `signalement/` · `partage/` |
 | Partage (public) | `GET partage/{jeton}/` |
-| Portefeuille (simulé) | `GET portefeuille/` · `GET portefeuille/moyens/` · `GET portefeuille/transactions/` · `POST portefeuille/recharger/` · `POST portefeuille/retirer/` |
+| Portefeuille | `GET portefeuille/` · `GET portefeuille/moyens/` · `GET portefeuille/transactions/` (+ `{id}/`) · `POST portefeuille/recharger/` · `POST portefeuille/retirer/` · `POST paiements/paygate/callback/` (PayGate) |
 | Notifications | `POST notifications/appareils/` · `DELETE notifications/appareils/{jeton}/` |
 | Admin (`admin/…`) | `tableau-de-bord/` · `indicateurs/` · `utilisateurs/` (+ `{id}/`, `suspendre/` avec motif, `reactiver/`) · `kyc/` (+ `{id}/`, `valider/`, `rejeter/`, `pieces/{id}/fichier/`) · `trajets/` (+ `{id}/`) · `reservations/` (+ `{id}/`) · `signalements/` (+ `{id}/`, `{id}/traiter/`) · `parametres/` (+ `{cle}/`) |

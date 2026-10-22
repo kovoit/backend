@@ -22,7 +22,12 @@ class MoyenPaiement(models.TextChoices):
 
 
 class StatutTransaction(models.TextChoices):
+    """Seules les lignes validées comptent dans le solde (sauf un retrait en attente, déjà
+    retenu pour éviter la double dépense). Un paiement Mobile Money attend la confirmation."""
+
     VALIDEE = "validee", "Validée"
+    EN_ATTENTE = "en_attente", "En attente de confirmation"
+    ECHOUEE = "echouee", "Échouée"
 
 
 class Transaction(BaseModel):
@@ -47,6 +52,9 @@ class Transaction(BaseModel):
         help_text="Renseigné pour les mouvements passés par Mobile Money (recharge, retrait).",
     )
     reference_externe = models.CharField(max_length=64, blank=True)
+    telephone = models.CharField(
+        max_length=20, blank=True, help_text="Numéro Mobile Money débité ou crédité"
+    )
     statut = models.CharField(
         max_length=10, choices=StatutTransaction.choices, default=StatutTransaction.VALIDEE
     )

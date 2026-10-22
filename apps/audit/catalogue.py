@@ -53,6 +53,11 @@ ACTIONS: dict[str, Action] = {
     # Portefeuille (simulé)
     "portefeuille.recharger": Action("Recharge du portefeuille", C.METIER, "utilisateur"),
     "portefeuille.retirer": Action("Retrait du portefeuille", C.METIER, "utilisateur"),
+    "paiement.initier": Action("Paiement Mobile Money initié", C.METIER, "utilisateur"),
+    "paiement.confirmer": Action(
+        "Confirmation d'un paiement Mobile Money", C.METIER, "utilisateur"
+    ),
+    "portefeuille.verser": Action("Versement manuel d'un retrait", C.ADMIN, "utilisateur"),
     # Confiance, partage, paramètres
     "avis.noter": Action("Note d'un trajet", C.METIER, "reservation"),
     "signalement.creer": Action("Signalement d'un problème", C.METIER, "reservation"),
@@ -61,6 +66,7 @@ ACTIONS: dict[str, Action] = {
     "parametre.modifier": Action("Modification d'un paramètre", C.ADMIN, "parametre"),
     # Journal d'audit et incidents
     "audit.purger": Action("Purge du journal d'audit (rétention)", C.ADMIN),
+    "audit.exporter": Action("Export du journal d'audit", C.ADMIN),
     "api.acces_refuse": Action("Accès refusé", C.SECURITE),
     "api.trop_de_requetes": Action("Trop de requêtes", C.SECURITE),
     "api.non_authentifie": Action("Accès sans session valide", C.SECURITE),

@@ -15,7 +15,7 @@ Kovoit : covoiturage urbain à Lomé (Togo) par partage des frais de carburant. 
 | Base de données | PostgreSQL 16 (coordonnées GPS en latitude / longitude, sans PostGIS) |
 | Tâches asynchrones | Celery + Redis (emails, clôture auto, suspensions) |
 | Routage / distances | **OSRM** derrière une interface `RoutingProvider` |
-| Paiement | **Simulation** derrière une interface `PaiementProvider` |
+| Paiement | **PayGate Global** (Flooz, Mixx) derrière `PaiementProvider` ; simulation sans `PAYGATE_AUTH_TOKEN` |
 | Documentation API | drf-spectacular (OpenAPI 3) |
 | Qualité | pytest-django, factory_boy, ruff, pre-commit |
 
@@ -68,7 +68,7 @@ backend/
     ├── confiance/     # Note, Signalement / litige, fiabilité, suspension auto
     ├── partage/       # lien public temporaire « Partager mon trajet »
     ├── notifications/ # EmailSender (Gmail SMTP), PushSender (FCM), Fake
-    ├── portefeuille/  # Transaction (journal) + PaiementProvider simulé
+    ├── portefeuille/  # Transaction (journal), PaiementProvider : simulation ou PayGate (paygate.py)
     ├── dashboard/     # indicateurs, tableau de bord admin, économies conducteur, données de démo (demo/, seed_*)
     └── audit/         # journal d'audit en ajout seul : journaliser(), refus de l'API, flux temps réel, rétention
 ```
@@ -143,7 +143,7 @@ apps/<app>/
 6. **Secrets :** uniquement via variables d'environnement (`.env`, jamais commité). `.env.example` tenu à jour.
 7. **Fournisseurs externes** (email, push, routage, paiement) : toujours derrière une interface + implémentation `Fake` utilisée en test. Aucun test n'appelle un service réel.
 8. **Journal d'audit (`apps/audit`) :** toute action métier ou administrative importante appelle `journaliser("<action>", ressource=…)` **dans la transaction de l'opération** (pas de succès sans trace). L'action doit figurer dans `audit/catalogue.py` (`ACTIONS`, et `ROUTES` pour relier la route d'écriture à ses refus). Les refus, accès refusés et erreurs 500 sont journalisés automatiquement par le gestionnaire d'exceptions. Acteur = utilisateur authentifié par le serveur ; canal = claim signé `canal` du JWT (`mobile` posé par l'OTP, `web` par la connexion admin), jamais une donnée du client. Détails : champs choisis un par un, jamais de secret, code, jeton ni contenu de pièce KYC (`audit/securite.py` masque en second rempart). Journal non modifiable (modèle + trigger PostgreSQL) ; seule suppression : `purger_expires` (rétention `audit_retention_jours`, tâche Celery quotidienne) et `purger_demo`.
-9. **Hors MVP :** ne rien implémenter hors périmètre (messagerie, KYC automatique/OCR, trajets interurbains, trajets récurrents, vrai Mobile Money, offre entreprises).
+9. **Hors MVP :** ne rien implémenter hors périmètre (messagerie, KYC automatique/OCR, trajets interurbains, trajets récurrents, versement automatique des retraits, offre entreprises).
 
 ## 6. Authentification — OTP email via Gmail SMTP
 
@@ -160,7 +160,7 @@ apps/<app>/
 
 - **Tarification : à définir plus tard.** Ne coder **aucun** algorithme de prix. Les champs `prix` et `frais_service` existent sur `Reservation` (nullable). L'app `tarification` expose `prix_par_place(distance_km)` et `frais_service()` ; `prix_par_place`, en attendant, renvoie le paramètre `prix_simulation` ; elle sera remplacée sans toucher aux autres apps.
 - **Distance :** `routage` calcule `distance_km` par la route (OSRM) et la stocke ; la correspondance utilise Haversine à vol d'oiseau (pré-filtre lat/lng en base).
-- **Paiement : simulation** du portefeuille (option B de la spec) via `SimulationPaiementProvider` (aucun argent réel, références `SIM-…`).
+- **Paiement : PayGate Global** (`portefeuille/paygate.py`) dès que `PAYGATE_AUTH_TOKEN` est fourni ; sinon `SimulationPaiementProvider` (aucun argent réel, références `SIM-…`). Recharge asynchrone (`en_attente` → `validee` | `echouee`), jamais validée sur la seule foi du callback : revérification par `/api/v2/status`. Tests : faux PayGate, aucun appel réseau. Retraits versés manuellement (Django admin).
   - Journal `Transaction` en ajout seul : `recharge, blocage, deblocage, debit, credit, retrait, remboursement`. **Le solde n'est jamais stocké** : il est calculé depuis le journal.
   - `solde_total = recharge + credit + remboursement − debit − retrait` ; `bloque = blocage − deblocage` ; `disponible = solde_total − bloque`.
   - Demande de réservation → `blocage` · refus / annulation → `deblocage` · code de départ saisi → `deblocage` + `debit` · clôture → `credit` conducteur · absence → `deblocage` + `debit` passager + `credit` conducteur · litige → rien tant que l'admin n'a pas tranché.

@@ -37,7 +37,11 @@ def test_sans_solde_ni_moyen_indique_le_complement(passager_sans_argent, trajet)
     with pytest.raises(portefeuille.SoldeInsuffisant) as exc:
         demander(passager_sans_argent, trajet)
 
-    assert exc.value.erreurs == {"complement_a_payer": 300, "moyens_paiement": ["flooz", "mixx"]}
+    assert exc.value.erreurs == {
+        "complement_a_payer": 300,
+        "moyens_paiement": ["flooz", "mixx"],
+        "recharge_requise": False,
+    }
 
 
 def test_complement_total_paye_par_mixx(passager_sans_argent, trajet):

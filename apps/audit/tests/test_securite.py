@@ -79,7 +79,8 @@ def test_erreur_interne_journalisee_sans_details(client_de, passager):
 def test_echec_d_ecriture_du_journal_annule_l_operation(client_de, passager):
     """Pas de succès sans trace : si le journal ne peut pas écrire, l'opération est annulée."""
     with patch(
-        "apps.portefeuille.services.journaliser", side_effect=RuntimeError("base indisponible")
+        "apps.portefeuille.services.mobile_money.journaliser",
+        side_effect=RuntimeError("base indisponible"),
     ):
         reponse = client_de(passager).post(
             "/api/v1/portefeuille/recharger/", {"montant": 1000, "moyen": "flooz"}, format="json"

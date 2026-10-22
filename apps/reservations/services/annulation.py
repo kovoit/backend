@@ -83,6 +83,12 @@ def annuler_reservations_du_trajet(trajet, conducteur) -> None:
     for reservation in reservation_repository.du_trajet(trajet, list(ANNULABLES)):
         reservation = reservation_repository.get_verrouillee(reservation.id)
         tardive = _annuler(reservation, conducteur) or tardive
+        journaliser(
+            "reservation.annuler",
+            ressource=reservation,
+            role="conducteur",
+            details={"cause": "trajet_annule", "trajet_id": trajet.id},
+        )
         notifier_passager(
             reservation,
             "Trajet annulé",
@@ -100,6 +106,13 @@ def annuler_engagements_a_venir(utilisateur) -> None:
     for reservation in reservation_repository.a_venir_de_passager(utilisateur, timezone.now()):
         reservation = reservation_repository.get_verrouillee(reservation.id)
         _annuler(reservation, utilisateur, compter_incident=False)
+        journaliser(
+            "reservation.annuler",
+            ressource=reservation,
+            systeme=True,
+            categorie="metier",
+            details={"cause": "suspension", "compte_id": utilisateur.id},
+        )
         notifier_conducteur(
             reservation,
             "Réservation annulée",

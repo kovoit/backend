@@ -152,3 +152,35 @@ def test_retention_purge_controlee_et_tracee(admin):
     trace = EvenementAudit.objects.filter(action="audit.purger", details__supprimes=1)
     assert trace.count() == 1
     assert un_evenement("parametre.modifier").changements == {"valeur": [365, 30]}
+
+
+def test_export_csv_filtre_et_journalise(client_admin, passager, client_utilisateur):
+    vider_journal()
+    journaliser("profil.modifier", ressource=passager, acteur=passager)
+    journaliser("api.erreur_interne", resultat="echec")
+
+    reponse = client_admin.get(f"{BASE}export/", {"categorie": "technique"})
+
+    assert reponse.status_code == 200
+    lignes = reponse.content.decode("utf-8-sig").strip().splitlines()
+    assert lignes[0].startswith("enregistre_le;survenu_le;action")
+    assert len(lignes) == 2 and "api.erreur_interne" in lignes[1]
+    assert reponse["X-Export-Tronque"] == "0"
+    assert un_evenement("audit.exporter").details["lignes"] == 1
+    assert client_utilisateur.get(f"{BASE}export/").status_code == 403
+
+
+def test_annulations_en_cascade_journalisees(conducteur, passager):
+    from apps.reservations import services as reservations
+    from apps.trajets.services import annuler
+    from conftest import demander, publier_trajet
+
+    trajet = publier_trajet(conducteur)
+    reservations.accepter(conducteur, demander(passager, trajet).id)
+    vider_journal()
+
+    annuler(conducteur, trajet.id)
+
+    cascade = un_evenement("reservation.annuler")
+    assert cascade.details["cause"] == "trajet_annule"
+    assert un_evenement("trajet.annuler").ressource_id == str(trajet.id)

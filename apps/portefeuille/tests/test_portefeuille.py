@@ -8,8 +8,10 @@ pytestmark = pytest.mark.django_db
 
 
 def test_recharge_simulee_par_flooz(utilisateur):
-    solde = services.recharger(utilisateur, 2000, "flooz")
+    ligne = services.recharger(utilisateur, 2000, "flooz")
 
+    assert ligne.statut == "validee"
+    solde = services.solde(utilisateur)
     assert solde.total == solde.disponible == 2000
     transaction = Transaction.objects.get()
     assert transaction.moyen_paiement == "flooz"
@@ -32,7 +34,8 @@ def test_retrait_limite_au_disponible(passager, reservation):
     with pytest.raises(services.SoldeInsuffisant):
         services.retirer(passager, 4800, "mixx")  # 300 F sont bloqués
 
-    assert services.retirer(passager, 4700, "mixx").total == 300
+    assert services.retirer(passager, 4700, "mixx").statut == "validee"
+    assert services.solde(passager).total == 300
 
 
 def test_apercu_paiement(utilisateur):
@@ -56,7 +59,9 @@ def test_api_portefeuille(client_de, passager, reservation):
         {"code": "mixx", "libelle": "Mixx (Togocom)"},
     ]
     reponse = client.post("/api/v1/portefeuille/recharger/", {"montant": 1000, "moyen": "mixx"})
-    assert reponse.json()["reponse"]["total"] == 6000
+    assert reponse.status_code == 201
+    assert reponse.json()["reponse"]["solde"]["total"] == 6000
+    assert reponse.json()["reponse"]["transaction"]["statut"] == "validee"
     assert client.post("/api/v1/portefeuille/recharger/", {"montant": 1000}).status_code == 400
     historique = client.get("/api/v1/portefeuille/transactions/").json()["reponse"]
     assert historique["count"] == 3

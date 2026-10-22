@@ -1,4 +1,7 @@
+from django.conf import settings
+from django.utils.crypto import constant_time_compare
 from drf_spectacular.utils import extend_schema
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from apps.accounts.api.permissions import CONNECTE
@@ -8,11 +11,24 @@ from apps.portefeuille import services
 from apps.portefeuille.api.serializers import (
     MoyenPaiementSerializer,
     OperationMobileMoneySerializer,
+    ResultatOperationSerializer,
     SoldeSerializer,
     TransactionSerializer,
 )
 
-TAG = "portefeuille (simulé)"
+TAG = "portefeuille"
+MESSAGES = {
+    "validee": "Opération effectuée.",
+    "en_attente": "Validez le paiement sur votre téléphone pour terminer l'opération.",
+    "echouee": "Le paiement n'a pas abouti.",
+}
+
+
+def _resultat(request, ligne):
+    """201 : opération validée ; 202 : en attente de confirmation Mobile Money."""
+    donnees = {"transaction": ligne, "solde": services.solde(request.user)}
+    statut = 201 if ligne.statut == "validee" else 202
+    return succes(MESSAGES[ligne.statut], ResultatOperationSerializer(donnees).data, status=statut)
 
 
 class PortefeuilleVue(APIView):
@@ -57,15 +73,14 @@ class RechargerVue(APIView):
 
     @extend_schema(
         tags=[TAG],
-        summary="Recharger par Flooz ou Mixx (simulé)",
+        summary="Recharger par Flooz ou Mixx (PayGate, ou simulation sans jeton marchand)",
         request=OperationMobileMoneySerializer,
-        responses=SoldeSerializer,
+        responses={201: ResultatOperationSerializer, 202: ResultatOperationSerializer},
     )
     def post(self, request):
         entree = OperationMobileMoneySerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        solde = services.recharger(request.user, **entree.validated_data)
-        return succes("Recharge effectuée (simulation).", SoldeSerializer(solde).data)
+        return _resultat(request, services.recharger(request.user, **entree.validated_data))
 
 
 class RetirerVue(APIView):
@@ -73,12 +88,43 @@ class RetirerVue(APIView):
 
     @extend_schema(
         tags=[TAG],
-        summary="Retirer ses gains vers Flooz ou Mixx (simulé)",
+        summary="Retirer ses gains vers Flooz ou Mixx (versé manuellement avec PayGate)",
         request=OperationMobileMoneySerializer,
-        responses=SoldeSerializer,
+        responses={201: ResultatOperationSerializer, 202: ResultatOperationSerializer},
     )
     def post(self, request):
         entree = OperationMobileMoneySerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        solde = services.retirer(request.user, **entree.validated_data)
-        return succes("Retrait effectué (simulation).", SoldeSerializer(solde).data)
+        return _resultat(request, services.retirer(request.user, **entree.validated_data))
+
+
+class TransactionDetailVue(APIView):
+    permission_classes = CONNECTE
+
+    @extend_schema(
+        tags=[TAG],
+        summary="État d'une opération (une recharge en attente est revérifiée auprès de PayGate)",
+        responses=TransactionSerializer,
+    )
+    def get(self, request, pk):
+        ligne = services.verifier_paiement(request.user, pk)
+        return succes(MESSAGES[ligne.statut], TransactionSerializer(ligne).data)
+
+
+class CallbackPayGateVue(APIView):
+    """Appelé par PayGate (sans compte Kovoit). Le contenu n'est pas cru : seule la référence
+    sert à retrouver la recharge, dont le statut est revérifié auprès de PayGate."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(tags=[TAG], summary="Callback de confirmation PayGate", request=None,
+                   responses={200: None})  # fmt: skip
+    def post(self, request):
+        secret = settings.PAYGATE_CALLBACK_SECRET
+        if secret and not constant_time_compare(request.query_params.get("cle", ""), secret):
+            return succes("Notification ignorée.")
+        identifiant = str(request.data.get("identifier", ""))
+        if identifiant:
+            services.confirmer_par_callback(identifiant)
+        return succes("Notification reçue.")

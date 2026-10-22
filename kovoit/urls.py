@@ -14,6 +14,7 @@ API_APPLICATION = [
     "apps.accounts.api.urls",
     "apps.kyc.api.urls",
     "apps.vehicules.api.urls",
+    "apps.lieux.api.urls",
     "apps.trajets.api.urls",
     "apps.reservations.api.urls",
     "apps.confiance.api.urls",
