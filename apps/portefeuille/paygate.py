@@ -1,6 +1,7 @@
 """PayGate Global (Togo) : encaissement Flooz et Mixx (réseau « TMONEY » chez PayGate).
 
-API utilisée (guide d'intégration PayGate, recoupé avec les intégrations publiques) :
+API utilisée (/api/v1/pay confirmé par le guide d'intégration du compte marchand ;
+/api/v2/status et le callback restent à confirmer avec ce même guide) :
   POST {PAYGATE_URL}/api/v1/pay     auth_token, phone_number, amount, description,
                                     identifier, network → { tx_reference, status }
        status : 0 transaction enregistrée, 2 jeton invalide, 4 paramètres invalides, 6 doublon

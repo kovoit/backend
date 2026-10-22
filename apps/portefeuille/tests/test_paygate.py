@@ -174,3 +174,13 @@ def test_message_du_retrait_en_attente(client_de, passager, paygate):
 
     assert reponse.status_code == 202
     assert "Kovoit effectue le versement" in reponse.json()["message"]
+
+
+def test_callback_ignore_sans_secret_configure(api_client, utilisateur, paygate, settings):
+    settings.PAYGATE_CALLBACK_SECRET = ""
+    ligne = services.recharger(utilisateur, 2000, "flooz")
+    paygate.statut_paiement = 0
+
+    api_client.post(f"{CALLBACK}?cle=", {"identifier": str(ligne.id)})
+
+    assert Transaction.objects.get(id=ligne.id).statut == "en_attente"

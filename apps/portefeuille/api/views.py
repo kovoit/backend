@@ -128,7 +128,7 @@ class CallbackPayGateVue(APIView):
                    responses={200: None})  # fmt: skip
     def post(self, request):
         secret = settings.PAYGATE_CALLBACK_SECRET
-        if secret and not constant_time_compare(request.query_params.get("cle", ""), secret):
+        if not secret or not constant_time_compare(request.query_params.get("cle", ""), secret):
             return succes("Notification ignorée.")
         identifiant = str(request.data.get("identifier", ""))
         if identifiant:
