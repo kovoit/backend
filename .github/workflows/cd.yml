@@ -46,7 +46,7 @@ jobs:
             type=sha,format=long,value=${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Construire et publier
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
