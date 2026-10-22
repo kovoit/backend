@@ -2,9 +2,11 @@
 
 from datetime import timedelta
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.services import est_suspendu, suspendre
+from apps.audit.services import journaliser
 from apps.confiance.repository import note_repository
 from apps.kyc.models import TypeDossier
 from apps.kyc.services import est_verifie
@@ -65,5 +67,13 @@ def enregistrer_incident(utilisateur) -> bool:
         f"Suspension automatique : {incidents} incidents (annulations tardives ou absences) "
         f"en {get_param('periode_incidents_j')} jours."
     )
-    suspendre(utilisateur, get_param("duree_suspension_j"), motif)
+    with transaction.atomic():
+        suspendre(utilisateur, get_param("duree_suspension_j"), motif)
+        journaliser(
+            "compte.suspendre",
+            ressource=utilisateur,
+            systeme=True,
+            categorie="metier",
+            details={"motif": motif, "jours": get_param("duree_suspension_j")},
+        )
     return True

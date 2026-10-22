@@ -12,6 +12,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.repository import user_repository
+from apps.audit.contexte import CLAIM_CANAL
+from apps.audit.models import Canal
+from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite, ErreurMetier
 
 
@@ -44,7 +48,10 @@ def connecter_admin(email: str, mot_de_passe: str) -> dict:
     if not utilisateur.is_staff:
         raise CompteNonAdmin()
     update_last_login(None, utilisateur)
+    journaliser("session.connecter", ressource=utilisateur, acteur=utilisateur)
     jetons = RefreshToken.for_user(utilisateur)
+    # Claim signé : le serveur sait que ce jeton vient du back-office web (journal d'audit)
+    jetons[CLAIM_CANAL] = Canal.WEB
     return {"utilisateur": utilisateur, "access": str(jetons.access_token), "refresh": str(jetons)}
 
 
@@ -66,4 +73,7 @@ def deconnecter_admin(refresh: str | None) -> None:
     if not refresh:
         return
     with suppress(TokenError):
-        RefreshToken(refresh).blacklist()
+        jeton = RefreshToken(refresh)
+        jeton.blacklist()
+        utilisateur = user_repository.get_or_none(pk=jeton.get("user_id"))
+        journaliser("session.deconnecter", ressource=utilisateur, acteur=utilisateur)

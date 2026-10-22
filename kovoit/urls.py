@@ -14,6 +14,7 @@ API_APPLICATION = [
     "apps.accounts.api.urls",
     "apps.kyc.api.urls",
     "apps.vehicules.api.urls",
+    "apps.lieux.api.urls",
     "apps.trajets.api.urls",
     "apps.reservations.api.urls",
     "apps.confiance.api.urls",
@@ -31,6 +32,7 @@ API_ADMIN = [
     "apps.reservations.api.admin_urls",
     "apps.confiance.api.admin_urls",
     "apps.dashboard.api.admin_urls",
+    "apps.audit.api.admin_urls",
 ]
 
 urlpatterns = [

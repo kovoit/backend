@@ -10,6 +10,9 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.repository import otp_repository, user_repository
+from apps.audit.contexte import CLAIM_CANAL
+from apps.audit.models import Canal
+from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite, DonneesInvalides, TropDeRequetes
 from apps.notifications.services import envoyer_email
 from apps.parametres.services import get_param
@@ -77,13 +80,20 @@ def verifier_otp(email: str, code: str) -> dict:
     if not valide:
         raise CodeOtpInvalide()
 
-    utilisateur, nouveau = user_repository.get_ou_creer(email)
+    with transaction.atomic():
+        utilisateur, nouveau = user_repository.get_ou_creer(email)
+        if nouveau:
+            journaliser("compte.creer", ressource=utilisateur, acteur=utilisateur)
     if not utilisateur.is_active:
         raise CompteDesactive()
-    if not utilisateur.email_verifie:
-        utilisateur = user_repository.update(utilisateur, email_verifie=True)
+    with transaction.atomic():
+        if not utilisateur.email_verifie:
+            utilisateur = user_repository.update(utilisateur, email_verifie=True)
+        journaliser("session.connecter", ressource=utilisateur, acteur=utilisateur)
 
     jetons = RefreshToken.for_user(utilisateur)
+    # Claim signé : le serveur sait que ce jeton vient de l'app mobile (journal d'audit)
+    jetons[CLAIM_CANAL] = Canal.MOBILE
     return {
         "utilisateur": utilisateur,
         "nouveau_compte": nouveau,
@@ -94,7 +104,9 @@ def verifier_otp(email: str, code: str) -> dict:
 
 def deconnecter(refresh: str) -> None:
     try:
-        RefreshToken(refresh).blacklist()
+        with transaction.atomic():
+            RefreshToken(refresh).blacklist()
+            journaliser("session.deconnecter")
     except TokenError as exc:
         raise DonneesInvalides(
             "Jeton de rafraîchissement invalide ou déjà utilisé.", code="JETON_INVALIDE"

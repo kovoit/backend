@@ -38,9 +38,17 @@ CODES_ERREUR = (
 )
 
 
+def _journaliser(code: str, http_status: int, metier: bool) -> None:
+    """Refus, accès refusés et incidents vont au journal d'audit (sans jamais bloquer)."""
+    from apps.audit.services import journaliser_erreur_api
+
+    journaliser_erreur_api(code, http_status, metier)
+
+
 def gestionnaire_exceptions(exc, context):
     if isinstance(exc, ErreurMetier):
         set_rollback()
+        _journaliser(exc.code, exc.http_status, metier=True)
         return Response(enveloppe_echec(exc.message, exc.code, exc.erreurs), status=exc.http_status)
 
     if isinstance(exc, Http404):
@@ -52,12 +60,16 @@ def gestionnaire_exceptions(exc, context):
     if reponse is None:
         logger.exception("Erreur non gérée", exc_info=exc)
         set_rollback()
+        _journaliser("ERREUR_INTERNE", status.HTTP_500_INTERNAL_SERVER_ERROR, metier=False)
         return Response(
             enveloppe_echec(MESSAGE_ERREUR_INTERNE, "ERREUR_INTERNE"),
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-    reponse.data = enveloppe_echec(_message(exc), _code(exc), _erreurs(exc))
+    code = _code(exc)
+    # Une permission métier (ex. KYC_PASSAGER_REQUIS) est un refus métier, pas une erreur de saisie
+    _journaliser(code, reponse.status_code, metier=isinstance(exc, exceptions.PermissionDenied))
+    reponse.data = enveloppe_echec(_message(exc), code, _erreurs(exc))
     return reponse
 
 

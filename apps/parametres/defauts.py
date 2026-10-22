@@ -16,6 +16,7 @@ GROUPES = {
     "reservation": "Réservation, annulation et clôture",
     "fiabilite": "Fiabilité et suspension",
     "otp": "Connexion par code (OTP)",
+    "audit": "Journal d'audit",
 }
 
 
@@ -42,6 +43,14 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
     ),
     "retrait_min": Defaut(
         500, ENTIER, "Montant minimum d'un retrait simulé (F CFA).", "prix", "F CFA"
+    ),
+    "paiement_attente_max_min": Defaut(
+        60,
+        ENTIER,
+        "Délai maximal de confirmation d'un paiement Mobile Money (min).",
+        "prix",
+        "min",
+        5,
     ),
     "rayon_depart_km": Defaut(
         1.5,
@@ -107,5 +116,13 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
     ),
     "otp_max_par_heure": Defaut(
         5, ENTIER, "Nombre max d'OTP envoyés par heure et par email.", "otp", "codes", 1
+    ),
+    "audit_retention_jours": Defaut(
+        365,
+        ENTIER,
+        "Durée de conservation des événements du journal d'audit (jours).",
+        "audit",
+        "jours",
+        30,
     ),
 }

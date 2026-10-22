@@ -93,6 +93,19 @@ def test_files_de_travail(client_admin, conducteur, passager):
     assert corps["a_traiter"] == {"kyc_en_attente": 1, "signalements_ouverts": 1, "litiges": 1}
 
 
+def test_signale_les_donnees_de_demo(client_admin):
+    assert client_admin.get(URL).json()["reponse"]["donnees_demo"] is False
+
+    UserFactory(email="afi.demo@kovoit.tg")
+    assert client_admin.get(URL).json()["reponse"]["donnees_demo"] is True
+
+
+def test_detecte_les_comptes_de_seed_backoffice(client_admin):
+    UserFactory(email="kodjo.mensah@demo.kovoit.tg")
+
+    assert client_admin.get(URL).json()["reponse"]["donnees_demo"] is True
+
+
 def test_periode_invalide(client_admin):
     reponse = client_admin.get(URL, {"periode": "1an"})
 

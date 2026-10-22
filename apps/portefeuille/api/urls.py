@@ -10,6 +10,16 @@ urlpatterns = [
         views.TransactionsVue.as_view(),
         name="portefeuille-transactions",
     ),
+    path(
+        "portefeuille/transactions/<uuid:pk>/",
+        views.TransactionDetailVue.as_view(),
+        name="portefeuille-transaction",
+    ),
     path("portefeuille/recharger/", views.RechargerVue.as_view(), name="portefeuille-recharger"),
+    path(
+        "paiements/paygate/callback/",
+        views.CallbackPayGateVue.as_view(),
+        name="paygate-callback",
+    ),
     path("portefeuille/retirer/", views.RetirerVue.as_view(), name="portefeuille-retirer"),
 ]

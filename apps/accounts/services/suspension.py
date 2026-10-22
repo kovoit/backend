@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.accounts.models import StatutCompte, User
 from apps.accounts.repository import user_repository
 from apps.accounts.services.profil import est_suspendu
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit
 from apps.notifications.services import notifier
 
@@ -54,18 +55,31 @@ def suspendre_par_admin(utilisateur: User, motif: str, jours: int | None = None)
     with transaction.atomic():
         annulees = reservation_repository.compter_engagements_a_venir(utilisateur, timezone.now())
         utilisateur = suspendre(utilisateur, jours, motif)
+        journaliser(
+            "compte.suspendre",
+            ressource=utilisateur,
+            details={"motif": motif, "jours": jours, "reservations_annulees": annulees},
+        )
     return {"utilisateur": utilisateur, "reservations_annulees": annulees}
 
 
-def reactiver(utilisateur: User) -> User:
+def reactiver(utilisateur: User, systeme: bool = False) -> User:
+    """`systeme` : fin automatique d'une suspension (tâche planifiée), pas un admin."""
     if utilisateur.statut_compte == StatutCompte.ACTIF:
         raise DejaActif()
-    utilisateur = user_repository.update(
-        utilisateur,
-        statut_compte=StatutCompte.ACTIF,
-        suspendu_jusqu_au=None,
-        motif_suspension="",
-    )
+    with transaction.atomic():
+        utilisateur = user_repository.update(
+            utilisateur,
+            statut_compte=StatutCompte.ACTIF,
+            suspendu_jusqu_au=None,
+            motif_suspension="",
+        )
+        journaliser(
+            "compte.reactiver",
+            ressource=utilisateur,
+            systeme=systeme,
+            categorie="metier" if systeme else None,
+        )
     notifier(utilisateur, "Compte réactivé", "Votre compte Kovoit est de nouveau actif.")
     return utilisateur
 
@@ -73,5 +87,5 @@ def reactiver(utilisateur: User) -> User:
 def reactiver_suspensions_expirees() -> int:
     expires = list(user_repository.suspensions_expirees(timezone.now()))
     for utilisateur in expires:
-        reactiver(utilisateur)
+        reactiver(utilisateur, systeme=True)
     return len(expires)

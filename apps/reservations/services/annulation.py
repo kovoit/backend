@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit
 from apps.parametres.services import get_param
 from apps.portefeuille import services as portefeuille
@@ -54,7 +55,15 @@ def annuler(utilisateur, reservation_id) -> Reservation:
             raise Conflit("Cette réservation ne peut plus être annulée.", code="NON_ANNULABLE")
         if reservation.trajet.depart_le <= timezone.now():
             raise Conflit("Le départ a eu lieu : annulation impossible.", code="NON_ANNULABLE")
+        statut_avant = reservation.statut
         tardive = _annuler(reservation, utilisateur)
+        journaliser(
+            "reservation.annuler",
+            ressource=reservation,
+            role="passager" if utilisateur.id == reservation.passager_id else "conducteur",
+            changements={"statut": [statut_avant, StatutReservation.ANNULEE]},
+            details={"annulation_tardive": tardive},
+        )
 
     message = f"La réservation pour {libelle_trajet(reservation)} a été annulée."
     if utilisateur.id == reservation.passager_id:
@@ -74,6 +83,12 @@ def annuler_reservations_du_trajet(trajet, conducteur) -> None:
     for reservation in reservation_repository.du_trajet(trajet, list(ANNULABLES)):
         reservation = reservation_repository.get_verrouillee(reservation.id)
         tardive = _annuler(reservation, conducteur) or tardive
+        journaliser(
+            "reservation.annuler",
+            ressource=reservation,
+            role="conducteur",
+            details={"cause": "trajet_annule", "trajet_id": trajet.id},
+        )
         notifier_passager(
             reservation,
             "Trajet annulé",
@@ -91,6 +106,13 @@ def annuler_engagements_a_venir(utilisateur) -> None:
     for reservation in reservation_repository.a_venir_de_passager(utilisateur, timezone.now()):
         reservation = reservation_repository.get_verrouillee(reservation.id)
         _annuler(reservation, utilisateur, compter_incident=False)
+        journaliser(
+            "reservation.annuler",
+            ressource=reservation,
+            systeme=True,
+            categorie="metier",
+            details={"cause": "suspension", "compte_id": utilisateur.id},
+        )
         notifier_conducteur(
             reservation,
             "Réservation annulée",

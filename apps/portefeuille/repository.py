@@ -1,9 +1,14 @@
 from datetime import datetime
 
-from django.db.models import Sum
+from django.db.models import Q, Sum
 
 from apps.core.repository import BaseRepository
-from apps.portefeuille.models import Transaction, TypeTransaction
+from apps.portefeuille.models import StatutTransaction, Transaction, TypeTransaction
+
+# Lignes qui comptent dans le solde : validées, et retraits en attente (montant déjà retenu)
+COMPTEES = Q(statut=StatutTransaction.VALIDEE) | Q(
+    type=TypeTransaction.RETRAIT, statut=StatutTransaction.EN_ATTENTE
+)
 
 
 class TransactionRepository(BaseRepository[Transaction]):
@@ -11,7 +16,7 @@ class TransactionRepository(BaseRepository[Transaction]):
 
     def sommes_par_type(self, utilisateur) -> dict[str, int]:
         lignes = (
-            self.filter(utilisateur=utilisateur)
+            self.filter(COMPTEES, utilisateur=utilisateur)
             .values("type")
             .annotate(total=Sum("montant"))
             .values_list("type", "total")
@@ -23,6 +28,22 @@ class TransactionRepository(BaseRepository[Transaction]):
             total=Sum("montant")
         )["total"]
         return total or 0
+
+    def get_de(self, utilisateur, transaction_id) -> Transaction:
+        return self._get(self.filter(utilisateur=utilisateur), pk=transaction_id)
+
+    def get_verrouillee(self, transaction_id) -> Transaction:
+        return self._get(self.model.objects.select_for_update(), pk=transaction_id)
+
+    def recharges_en_attente(self, depuis: datetime):
+        return self.filter(
+            type=TypeTransaction.RECHARGE, statut=StatutTransaction.EN_ATTENTE, cree_le__gte=depuis
+        )
+
+    def recharges_expirees(self, avant: datetime):
+        return self.filter(
+            type=TypeTransaction.RECHARGE, statut=StatutTransaction.EN_ATTENTE, cree_le__lt=avant
+        )
 
     def historique(self, utilisateur):
         return self.filter(utilisateur=utilisateur).order_by("-cree_le")

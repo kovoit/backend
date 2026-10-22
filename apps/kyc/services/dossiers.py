@@ -3,6 +3,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite, Conflit, DonneesInvalides
 from apps.kyc.models import KycDossier, StatutKyc, TypeDossier, TypePiece
 from apps.kyc.repository import dossier_repository, piece_repository
@@ -70,6 +71,12 @@ def ajouter_piece(utilisateur, type_dossier: str, type_piece: str, fichier) -> K
         if dossier.statut not in STATUTS_MODIFIABLES:
             raise DossierNonModifiable()
         piece_repository.remplacer(dossier, type_piece, fichier)
+        # Le type de pièce seulement : jamais le fichier ni son contenu
+        journaliser(
+            "kyc.deposer_piece",
+            ressource=dossier,
+            details={"type_dossier": type_dossier, "type_piece": type_piece},
+        )
     return dossier_repository.get_by_id(dossier.id)
 
 
@@ -90,6 +97,7 @@ def soumettre(utilisateur, type_dossier: str) -> KycDossier:
         dossier_repository.update(
             dossier, statut=StatutKyc.EN_ATTENTE, soumis_le=timezone.now(), motif_rejet=""
         )
+        journaliser("kyc.soumettre", ressource=dossier, details={"type_dossier": type_dossier})
     return dossier_repository.get_by_id(dossier.id)
 
 

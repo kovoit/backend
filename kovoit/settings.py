@@ -5,7 +5,7 @@ from pathlib import Path
 
 import environ
 
-from apps.core.api.schema import ENUM_NAME_OVERRIDES
+from apps.core.api.schema import REGLAGES_SPECTACULAR
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,12 +30,14 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Apps Kovoit
     "apps.core",
+    "apps.audit",
     "apps.accounts",
     "apps.parametres",
     "apps.notifications",
     "apps.kyc",
     "apps.vehicules",
     "apps.routage",
+    "apps.lieux",
     "apps.tarification",
     "apps.trajets",
     "apps.reservations",
@@ -47,6 +49,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Identifiant de corrélation (X-Request-ID) et contexte du journal d'audit
+    "apps.audit.contexte.ContexteAuditMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -106,6 +110,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "prive"))
 
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_EXPOSE_HEADERS = ["X-Request-ID"]  # corrélation avec le journal d'audit
 CORS_ALLOW_CREDENTIALS = True  # cookie de refresh du back-office, origines ci-dessus seulement
 
 LOGGING = {
@@ -141,21 +146,7 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": True,
 }
 
-SPECTACULAR_SETTINGS = {
-    "TITLE": "API Kovoit",
-    "DESCRIPTION": (
-        "API backend Kovoit (covoiturage urbain à Lomé). Toutes les réponses suivent "
-        "l'enveloppe { statut: success | failed, message, reponse }."
-    ),
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
-    "COMPONENT_SPLIT_REQUEST": True,
-    "ENUM_NAME_OVERRIDES": ENUM_NAME_OVERRIDES,
-    "POSTPROCESSING_HOOKS": [
-        "drf_spectacular.hooks.postprocess_schema_enums",
-        "apps.core.api.schema.envelopper_reponses",
-    ],
-}
+SPECTACULAR_SETTINGS = dict(REGLAGES_SPECTACULAR)  # voir apps/core/api/schema.py
 
 # Celery
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
@@ -170,6 +161,15 @@ OSRM_URL = env("OSRM_URL", default="https://router.project-osrm.org")
 FIREBASE_CREDENTIALS = env("FIREBASE_CREDENTIALS", default="")
 _PUSH = "fcm.FcmPushSender" if FIREBASE_CREDENTIALS else "push.JournalPushSender"
 NOTIFICATIONS_PUSH_SENDER = env("NOTIFICATIONS_PUSH_SENDER", default=f"apps.notifications.{_PUSH}")
+
+# Paiement Mobile Money : simulation par défaut ; PayGate dès que le jeton marchand est fourni
+PAYGATE_AUTH_TOKEN = env("PAYGATE_AUTH_TOKEN", default="")
+PAYGATE_URL = env("PAYGATE_URL", default="https://paygateglobal.com")
+PAYGATE_CALLBACK_SECRET = env("PAYGATE_CALLBACK_SECRET", default="")
+_PAIEMENT = (
+    "paygate.PayGateProvider" if PAYGATE_AUTH_TOKEN else "provider.SimulationPaiementProvider"
+)
+PAIEMENT_PROVIDER = env("PAIEMENT_PROVIDER", default=f"apps.portefeuille.{_PAIEMENT}")
 
 # Email (Gmail SMTP en production, console en développement)
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")

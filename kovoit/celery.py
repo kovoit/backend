@@ -18,4 +18,12 @@ app.conf.beat_schedule = {
         "task": "apps.accounts.tasks.reactiver_suspensions",
         "schedule": 60 * 60,
     },
+    "verification-des-paiements-mobile-money": {
+        "task": "apps.portefeuille.tasks.verifier_paiements",
+        "schedule": 2 * 60,
+    },
+    "retention-du-journal-d-audit": {
+        "task": "apps.audit.tasks.purger_journal_expire",
+        "schedule": 24 * 60 * 60,
+    },
 }

@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite, Conflit
 from apps.portefeuille import services as portefeuille
 from apps.reservations.models import Reservation
@@ -52,6 +53,17 @@ def demander_place(
             reservation_repository.update(
                 reservation, moyen_paiement=moyen_paiement, complement_paye=complement
             )
+        journaliser(
+            "reservation.demander",
+            ressource=reservation,
+            role="passager",
+            details={
+                "trajet_id": trajet.id,
+                "montant_total": reservation.montant_total,
+                "complement_paye": complement,
+                "moyen_paiement": moyen_paiement if complement else None,
+            },
+        )
 
     notifier_conducteur(
         reservation,

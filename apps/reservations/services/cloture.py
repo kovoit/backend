@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, DonneesInvalides
 from apps.parametres.services import get_param
 from apps.portefeuille import services as portefeuille
@@ -56,6 +57,7 @@ def confirmer_arrivee(passager, reservation_id) -> Reservation:
                 "Seul un trajet terminé peut être confirmé.", code="CONFIRMATION_IMPOSSIBLE"
             )
         _cloturer(reservation)
+        journaliser("reservation.confirmer_arrivee", ressource=reservation, role="passager")
     notifier_conducteur(
         reservation,
         "Trajet clôturé",
@@ -73,6 +75,7 @@ def cloturer_automatiquement() -> int:
             reservation = reservation_repository.get_verrouillee(reservation.id)
             if reservation.statut == StatutReservation.TERMINEE:
                 _cloturer(reservation)
+                journaliser("reservation.cloturer", ressource=reservation, systeme=True)
                 nombre += 1
     return nombre
 

@@ -1,3 +1,6 @@
+from django.db import transaction
+
+from apps.audit.services import journaliser
 from apps.core.exceptions import Conflit, DonneesInvalides
 from apps.vehicules.models import TypeVehicule, Vehicule
 from apps.vehicules.repository import vehicule_repository
@@ -39,7 +42,14 @@ def get_vehicule(utilisateur, vehicule_id) -> Vehicule:
 
 def declarer(utilisateur, **donnees) -> Vehicule:
     donnees = _verifier({k: v for k, v in donnees.items() if k in CHAMPS_MODIFIABLES})
-    return vehicule_repository.create(proprietaire=utilisateur, **donnees)
+    with transaction.atomic():
+        vehicule = vehicule_repository.create(proprietaire=utilisateur, **donnees)
+        journaliser(
+            "vehicule.declarer",
+            ressource=vehicule,
+            details={"type_vehicule": vehicule.type_vehicule, "nb_places": vehicule.nb_places},
+        )
+    return vehicule
 
 
 def modifier(utilisateur, vehicule_id, **donnees) -> Vehicule:
@@ -48,7 +58,10 @@ def modifier(utilisateur, vehicule_id, **donnees) -> Vehicule:
     donnees.setdefault("type_vehicule", vehicule.type_vehicule)
     donnees.setdefault("nb_places", vehicule.nb_places)
     donnees = _verifier(donnees, vehicule.id)
-    return vehicule_repository.update(vehicule, **donnees)
+    with transaction.atomic():
+        vehicule = vehicule_repository.update(vehicule, **donnees)
+        journaliser("vehicule.modifier", ressource=vehicule, details={"champs": sorted(donnees)})
+    return vehicule
 
 
 def supprimer(utilisateur, vehicule_id) -> None:
@@ -58,4 +71,6 @@ def supprimer(utilisateur, vehicule_id) -> None:
             "Ce véhicule est lié à des trajets et ne peut pas être supprimé.",
             code="VEHICULE_UTILISE",
         )
-    vehicule_repository.delete(vehicule)
+    with transaction.atomic():
+        journaliser("vehicule.supprimer", ressource=vehicule)
+        vehicule_repository.delete(vehicule)

@@ -1,7 +1,9 @@
+from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import ModeActif, StatutCompte, User
 from apps.accounts.repository import user_repository
+from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite
 
 CHAMPS_MODIFIABLES = {"nom", "prenom", "telephone", "photo"}
@@ -23,7 +25,11 @@ def modifier_profil(utilisateur: User, **champs) -> User:
     donnees = {cle: valeur for cle, valeur in champs.items() if cle in CHAMPS_MODIFIABLES}
     if not donnees:
         return utilisateur
-    return user_repository.update(utilisateur, **donnees)
+    with transaction.atomic():
+        utilisateur = user_repository.update(utilisateur, **donnees)
+        # Noms des champs seulement : les valeurs (téléphone, photo) restent hors du journal
+        journaliser("profil.modifier", ressource=utilisateur, details={"champs": sorted(donnees)})
+    return utilisateur
 
 
 def changer_mode(utilisateur: User, mode: str) -> User:
@@ -47,7 +53,13 @@ def changer_mode(utilisateur: User, mode: str) -> User:
                 "Déclarez votre véhicule pour passer en mode conducteur.",
                 code="VEHICULE_REQUIS",
             )
-    return user_repository.update(utilisateur, mode_actif=mode)
+    ancien = utilisateur.mode_actif
+    with transaction.atomic():
+        utilisateur = user_repository.update(utilisateur, mode_actif=mode)
+        journaliser(
+            "profil.changer_mode", ressource=utilisateur, changements={"mode_actif": [ancien, mode]}
+        )
+    return utilisateur
 
 
 def lister_utilisateurs(recherche: str | None = None, statut: str | None = None):
