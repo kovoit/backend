@@ -33,6 +33,7 @@ API_ADMIN = [
     "apps.confiance.api.admin_urls",
     "apps.dashboard.api.admin_urls",
     "apps.audit.api.admin_urls",
+    "apps.portefeuille.api.admin_urls",
 ]
 
 urlpatterns = [

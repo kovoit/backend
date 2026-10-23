@@ -174,7 +174,9 @@ def retirer(utilisateur, montant: int, moyen: str, telephone: str = "") -> Trans
     return ligne
 
 
-def traiter_retrait(admin, transaction_id, verse: bool, reference: str = "") -> Transaction:
+def traiter_retrait(
+    admin, transaction_id, verse: bool, reference: str = "", motif: str = ""
+) -> Transaction:
     """Back-office : versement manuel effectué (ou refusé : le montant redevient disponible)."""
     with transaction.atomic():
         ligne = transaction_repository.get_verrouillee(transaction_id)
@@ -190,6 +192,6 @@ def traiter_retrait(admin, transaction_id, verse: bool, reference: str = "") -> 
             ressource=ligne.utilisateur,
             acteur=admin,
             resultat=R.SUCCES if verse else R.REFUS,
-            details=_details(ligne),
+            details={**_details(ligne), **({"motif": motif} if motif else {})},
         )
     return ligne

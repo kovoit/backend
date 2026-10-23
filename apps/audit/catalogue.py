@@ -84,6 +84,8 @@ ROUTES: dict[tuple[str, str], str] = {
     ("admin-kyc-rejeter", "POST"): "kyc.rejeter",
     ("admin-kyc-piece", "GET"): "kyc.consulter_piece",
     ("admin-signalement-traiter", "POST"): "signalement.traiter",
+    ("admin-retrait-verser", "POST"): "portefeuille.verser",
+    ("admin-retrait-refuser", "POST"): "portefeuille.verser",
     ("otp-demander", "POST"): "otp.demander",
     ("otp-verifier", "POST"): "session.connecter",
     ("jeton-rafraichir", "POST"): "session.rafraichir",

@@ -1,3 +1,4 @@
+from apps.portefeuille.services.admin import get_transaction, lister_transactions
 from apps.portefeuille.services.commun import (
     Solde,
     SoldeInsuffisant,
@@ -31,7 +32,9 @@ __all__ = [
     "crediter_conducteur",
     "debiter",
     "debloquer",
+    "get_transaction",
     "historique",
+    "lister_transactions",
     "moyens_paiement",
     "recharger",
     "rembourser",
