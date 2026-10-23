@@ -42,10 +42,14 @@ def _appeler(chemin: str, donnees: dict) -> dict:
     )
     try:
         with urllib.request.urlopen(requete, timeout=DELAI_S) as reponse:  # noqa: S310 — URL de config
-            return json.load(reponse)
+            donnees_reponse = json.load(reponse)
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
         logger.warning("PayGate injoignable (%s) : %s", chemin, type(exc).__name__)
         raise PaiementIndisponible() from exc
+    if not isinstance(donnees_reponse, dict):
+        logger.warning("Réponse PayGate inattendue (%s)", chemin)
+        raise PaiementIndisponible()
+    return donnees_reponse
 
 
 class PayGateProvider(PaiementProvider):

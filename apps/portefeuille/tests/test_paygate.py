@@ -53,7 +53,7 @@ def test_recharge_en_attente_puis_confirmee(utilisateur, paygate):
     chemin, envoye = paygate.appels[0]
     assert chemin == "/api/v1/pay"
     assert envoye == {
-        "phone_number": "+22890000001",
+        "phone_number": "90000001",
         "amount": 2000,
         "description": "Recharge du portefeuille Kovoit",
         "identifier": str(ligne.id),

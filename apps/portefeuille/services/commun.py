@@ -5,6 +5,7 @@ bloque      = blocage − deblocage                                    repositor
 disponible  = solde_total − bloque
 """
 
+import re
 from dataclasses import dataclass
 
 from apps.accounts.repository import user_repository
@@ -26,6 +27,19 @@ def moyens_paiement() -> list[dict]:
 def verifier_moyen(moyen: str) -> None:
     if moyen not in MoyenPaiement.values:
         raise DonneesInvalides("Moyen de paiement inconnu (flooz ou mixx).", code="MOYEN_INCONNU")
+
+
+def numero_mobile_money(numero: str) -> str:
+    """Numéro togolais à 8 chiffres (ex. 90123456) : espaces et indicatif +228 / 00228 retirés."""
+    chiffres = re.sub(r"\D", "", numero or "")
+    if len(chiffres) > 8 and chiffres.startswith(("00228", "228")):
+        chiffres = chiffres.removeprefix("00").removeprefix("228")
+    if len(chiffres) != 8:
+        raise DonneesInvalides(
+            "Numéro Mobile Money togolais invalide (8 chiffres, ex. 90 12 34 56).",
+            code="TELEPHONE_INVALIDE",
+        )
+    return chiffres
 
 
 @dataclass

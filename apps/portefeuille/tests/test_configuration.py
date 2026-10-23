@@ -23,3 +23,33 @@ def test_paiement_simule_sans_secret(settings):
     settings.PAIEMENT_PROVIDER = "apps.portefeuille.provider.SimulationPaiementProvider"
     settings.DEBUG, settings.PAYGATE_CALLBACK_SECRET = False, ""
     verifier_configuration_paiement()
+
+
+@pytest.mark.parametrize(
+    "saisi", ["90123456", "90 12 34 56", "+228 90 12 34 56", "0022890123456", "22890123456"]
+)
+def test_numero_mobile_money_normalise_a_8_chiffres(saisi):
+    from apps.portefeuille.services.commun import numero_mobile_money
+
+    assert numero_mobile_money(saisi) == "90123456"
+
+
+@pytest.mark.parametrize("saisi", ["9012345", "+33612345678", "901234567"])
+def test_numero_mobile_money_invalide(saisi):
+    from apps.core.exceptions import DonneesInvalides
+    from apps.portefeuille.services.commun import numero_mobile_money
+
+    with pytest.raises(DonneesInvalides):
+        numero_mobile_money(saisi)
+
+
+def test_reponse_paygate_inattendue(settings, monkeypatch):
+    import io
+
+    from apps.portefeuille import paygate
+    from apps.portefeuille.provider import PaiementIndisponible
+
+    settings.PAYGATE_AUTH_TOKEN = "jeton"
+    monkeypatch.setattr("urllib.request.urlopen", lambda requete, timeout: io.StringIO("[]"))
+    with pytest.raises(PaiementIndisponible):
+        paygate.PayGateProvider().verifier("id-1", "")

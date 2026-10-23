@@ -23,6 +23,7 @@ from apps.portefeuille.repository import transaction_repository
 from apps.portefeuille.services.commun import (
     SoldeInsuffisant,
     ecrire,
+    numero_mobile_money,
     solde,
     verifier_moyen,
     verrouiller,
@@ -33,7 +34,7 @@ def _telephone(utilisateur, telephone: str) -> str:
     numero = (telephone or utilisateur.telephone or "").strip()
     if not numero:
         raise DonneesInvalides("Indiquez le numéro Mobile Money.", code="TELEPHONE_REQUIS")
-    return numero
+    return numero_mobile_money(numero)
 
 
 def _details(ligne: Transaction) -> dict:
