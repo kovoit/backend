@@ -25,12 +25,15 @@ def test_lien_public_puis_expire_a_l_annulation(
         == chemin
     )
 
-    public = api_client.get(chemin).json()["reponse"]
+    assert chemin.startswith("/suivi/")
+    jeton = chemin.removeprefix("/suivi/").strip("/")
+    public = api_client.get(f"/api/v1/partage/{jeton}/").json()["reponse"]
     assert public["conducteur_prenom"] == "Kodjo"
     assert "TG" in public["vehicule"]
     assert "email" not in str(public)
 
     reservations.annuler(passager, reservation_acceptee.id)
+    assert api_client.get(f"/api/v1/partage/{jeton}/").status_code == 404
     assert api_client.get(chemin).status_code == 404
 
 

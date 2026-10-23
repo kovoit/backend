@@ -7,6 +7,7 @@ from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.core.api.vues_erreurs import page_introuvable
+from apps.partage.pages import suivre_trajet
 
 # API de l'application mobile : /api/v1/...
 API_APPLICATION = [
@@ -39,6 +40,7 @@ API_ADMIN = [
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="docs"), name="racine"),
     path("django-admin/", admin.site.urls),
+    path("suivi/<str:jeton>/", suivre_trajet, name="partage-suivi"),
     path("api/v1/auth/admin/", include("apps.accounts.api.admin_auth_urls")),
     path("api/v1/admin/parametres/", include("apps.parametres.api.urls")),
     *[path("api/v1/admin/", include(module)) for module in API_ADMIN],

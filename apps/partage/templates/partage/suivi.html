@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  {% if rafraichir_s %}<meta http-equiv="refresh" content="{{ rafraichir_s }}">{% endif %}
+  <title>Suivi du trajet · Kovoit</title>
+  <style>
+    :root { --fond: #f4f6fb; --carte: #fff; --texte: #0b1c3d; --doux: #5b6b86; --marque: #0b1c3d; --accent: #f5a623; --ok: #1e8e5a; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fond: #0b1220; --carte: #141d31; --texte: #eef2fb; --doux: #9aa7c0; --marque: #f5a623; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--fond); color: var(--texte); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 480px; margin: 0 auto; padding: 24px 16px 40px; }
+    header { font-weight: 800; font-size: 22px; color: var(--marque); margin-bottom: 16px; }
+    .carte { background: var(--carte); border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .etat { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 14px; background: rgba(245,166,35,.15); color: var(--texte); }
+    .etat.ok { background: rgba(30,142,90,.15); }
+    h1 { font-size: 20px; margin: 14px 0 4px; }
+    .doux { color: var(--doux); font-size: 14px; }
+    dl { margin: 16px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; }
+    dt { color: var(--doux); font-size: 14px; }
+    dd { margin: 0; font-weight: 600; }
+    .bouton { display: block; margin-top: 18px; text-align: center; padding: 14px; border-radius: 12px; background: var(--marque); color: var(--fond); font-weight: 700; text-decoration: none; }
+    footer { margin-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+<main>
+  <header>Kovoit</header>
+  {% if expire %}
+    <section class="carte">
+      <h1>Ce lien n'est plus valable</h1>
+      <p class="doux">Le trajet est clôturé ou a été annulé. Pour toute inquiétude, contactez directement la personne qui vous a envoyé ce lien.</p>
+    </section>
+  {% else %}
+    <section class="carte">
+      <span class="etat{% if not en_route %} ok{% endif %}">{{ etat }}</span>
+      <h1>{{ trajet.depart_libelle }} → {{ trajet.arrivee_libelle }}</h1>
+      <p class="doux">Départ prévu le {{ trajet.depart_le|date:"l j F à H:i" }}</p>
+      <dl>
+        <dt>Conducteur</dt><dd>{{ trajet.conducteur.prenom }}</dd>
+        <dt>Véhicule</dt><dd>{{ vehicule.marque }} {{ vehicule.modele }} {{ vehicule.couleur }}</dd>
+        <dt>Plaque</dt><dd>{{ vehicule.immatriculation }}</dd>
+        {% if en_route %}
+          <dt>Position</dt>
+          <dd>{% if position %}Mise à jour il y a {{ trajet.position_le|timesince:maintenant }}{% else %}Pas encore partagée par le conducteur{% endif %}</dd>
+        {% endif %}
+      </dl>
+      {% if en_route and position %}
+        <a class="bouton" rel="noreferrer noopener" target="_blank"
+           href="https://www.openstreetmap.org/?mlat={{ trajet.position_lat|stringformat:'.5f' }}&amp;mlon={{ trajet.position_lng|stringformat:'.5f' }}#map=17/{{ trajet.position_lat|stringformat:'.5f' }}/{{ trajet.position_lng|stringformat:'.5f' }}">Voir la position sur la carte</a>
+      {% endif %}
+    </section>
+    {% if rafraichir_s %}<footer class="doux">Cette page se met à jour toute seule toutes les {{ rafraichir_s }} secondes.</footer>{% endif %}
+  {% endif %}
+</main>
+</body>
+</html>

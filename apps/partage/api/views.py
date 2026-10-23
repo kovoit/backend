@@ -15,7 +15,8 @@ class LienSerializer(serializers.Serializer):
     chemin = serializers.SerializerMethodField()
 
     def get_chemin(self, lien) -> str:
-        return f"/api/v1/partage/{lien.jeton}/"
+        """Page lisible par le proche (HTML), relative au serveur de l'API."""
+        return f"/suivi/{lien.jeton}/"
 
 
 class TrajetPartageSerializer(serializers.Serializer):
