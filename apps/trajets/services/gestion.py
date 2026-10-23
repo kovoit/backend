@@ -64,7 +64,7 @@ def annuler(conducteur, trajet_id, cause: str = "") -> Trajet:
         if trajet.statut not in STATUTS_OUVERTS or trajet.depart_le <= timezone.now():
             raise Conflit("Ce trajet ne peut plus être annulé.", code="TRAJET_NON_ANNULABLE")
         trajet_repository.update(trajet, statut=StatutTrajet.ANNULE)
-        annuler_reservations_du_trajet(trajet, conducteur)
+        annuler_reservations_du_trajet(trajet, conducteur, compter_incident=cause != "suspension")
         journaliser("trajet.annuler", ressource=trajet, role="conducteur", details={"cause": cause})
     return trajet_repository.get_by_id(trajet.id)
 

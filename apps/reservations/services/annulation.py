@@ -75,14 +75,15 @@ def annuler(utilisateur, reservation_id) -> Reservation:
     return reservation_repository.get_by_id(reservation.id)
 
 
-def annuler_reservations_du_trajet(trajet, conducteur) -> None:
-    """Le conducteur annule son trajet (trajet déjà verrouillé et passé à « annulé »)."""
+def annuler_reservations_du_trajet(trajet, conducteur, compter_incident: bool = True) -> None:
+    """Le conducteur annule son trajet (trajet déjà verrouillé et passé à « annulé »).
+    `compter_incident=False` : annulation due à une suspension, jamais comptée comme tardive."""
     from apps.confiance.services import enregistrer_incident
 
     tardive = False
     for reservation in reservation_repository.du_trajet(trajet, list(ANNULABLES)):
         reservation = reservation_repository.get_verrouillee(reservation.id)
-        tardive = _annuler(reservation, conducteur) or tardive
+        tardive = _annuler(reservation, conducteur, compter_incident) or tardive
         journaliser(
             "reservation.annuler",
             ressource=reservation,

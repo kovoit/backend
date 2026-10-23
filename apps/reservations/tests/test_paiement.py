@@ -1,11 +1,16 @@
 """Paiement à la réservation : portefeuille d'abord, complément par Flooz ou Mixx."""
 
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
+from freezegun import freeze_time
 
 from apps.kyc.tests.factories import verifier_kyc
 from apps.parametres.services import modifier_param
 from apps.portefeuille import services as portefeuille
 from apps.reservations import services
+from apps.reservations.models import StatutReservation as S
 from conftest import GRAND_MARCHE, demander
 
 pytestmark = pytest.mark.django_db
@@ -98,3 +103,20 @@ def test_moyen_de_paiement_invalide(client_de, passager_sans_argent, trajet):
 
     assert reponse.status_code == 400
     assert "moyen_paiement" in reponse.json()["reponse"]["erreurs"]
+
+
+def test_suspension_du_conducteur_sans_incident(conducteur, passager, reservation_acceptee):
+    """Trajet annulé à 10 min du départ par une suspension : ni annulation tardive, ni incident."""
+    from apps.accounts.services import suspendre
+    from apps.reservations.repository import reservation_repository
+
+    with freeze_time(reservation_acceptee.trajet.depart_le - timedelta(minutes=10)):
+        suspendre(conducteur, jours=7, motif="Contrôle")
+        depuis = timezone.now() - timedelta(days=30)
+        incidents = reservation_repository.compter_incidents(conducteur, depuis)
+
+    reservation_acceptee.refresh_from_db()
+    assert reservation_acceptee.statut == S.ANNULEE
+    assert reservation_acceptee.annulation_tardive is False
+    assert incidents == 0
+    assert portefeuille.solde(passager).bloque == 0
