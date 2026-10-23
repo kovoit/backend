@@ -24,6 +24,10 @@ services:
       - "6381:6379"
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
 
   web:
     build: .
@@ -43,7 +47,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   worker:
     build: .
@@ -54,7 +58,11 @@ services:
     environment: *docker-env
     volumes:
       - .:/app
-    depends_on: [db, redis]
+    depends_on: # celery attend que PostgreSQL et Redis soient prêts
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   beat:
     build: .
@@ -65,7 +73,11 @@ services:
     environment: *docker-env
     volumes:
       - .:/app
-    depends_on: [db, redis]
+    depends_on: # celery attend que PostgreSQL et Redis soient prêts
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   pgdata:

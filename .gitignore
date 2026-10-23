@@ -234,3 +234,7 @@ prive/
 *firebase*.json
 *-adminsdk-*.json
 secrets/
+
+# Fichiers de secrets par environnement (ex. .env.prod sur le serveur)
+.env.*
+!.env.example

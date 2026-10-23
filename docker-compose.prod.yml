@@ -1,0 +1,85 @@
+# Stack Kovoit de PRODUCTION (serveur). Le développement utilise docker-compose.yml.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# Les secrets viennent de .env.prod sur le serveur (jamais commité) : voir .env.example.
+# Variables propres à ce fichier : POSTGRES_PASSWORD (obligatoire), KOVOIT_IMAGE (facultatif).
+# L'API écoute sur 127.0.0.1:8000 : un reverse proxy HTTPS (ex. Caddy) la publie sur
+# api.kovoittg.com. PostgreSQL et Redis ne sont jamais exposés hors du serveur.
+name: kovoit-prod
+
+x-app: &app
+  image: ${KOVOIT_IMAGE:-ghcr.io/kovoit/backend:latest}
+  restart: unless-stopped
+  env_file: .env.prod
+  environment:
+    DJANGO_DEBUG: "False"
+    DATABASE_URL: postgres://kovoit:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}@db:5432/kovoit
+    CACHE_URL: rediscache://redis:6379/1
+    CELERY_BROKER_URL: redis://redis:6379/0
+    PRIVATE_MEDIA_ROOT: /app/prive
+  volumes:
+    - kyc:/app/prive # pièces KYC : volume persistant, à inclure dans les sauvegardes
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kovoit
+      POSTGRES_USER: kovoit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kovoit -d kovoit"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  # Migrations et paramètres de départ, puis s'arrête ; l'API démarre ensuite.
+  migrate:
+    <<: *app
+    restart: "no"
+    command: sh -c "python manage.py migrate --noinput && python manage.py seed_parametres"
+
+  web:
+    <<: *app
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *app
+    command: celery -A kovoit worker -l info
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  beat:
+    <<: *app
+    command: celery -A kovoit beat -l info --schedule /tmp/celerybeat-schedule
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  redisdata:
+  kyc:
