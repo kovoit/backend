@@ -164,3 +164,23 @@ def test_transitions_interdites(conducteur, passager, reservation):
     services.refuser(conducteur, reservation.id)
     with pytest.raises(TransitionInvalide):
         services.accepter(conducteur, reservation.id)
+
+
+def test_pas_d_acceptation_apres_l_heure_de_depart(conducteur, reservation):
+    apres_depart = reservation.trajet.depart_le + timedelta(minutes=1)
+    with freeze_time(apres_depart), pytest.raises(Conflit) as exc:
+        services.accepter(conducteur, reservation.id)
+
+    assert exc.value.code == "DEPART_PASSE"
+    reservation.refresh_from_db()
+    assert reservation.statut == S.DEMANDEE
+
+
+@pytest.mark.parametrize("statut", [StatutTrajet.EN_COURS, StatutTrajet.TERMINE])
+def test_pas_d_acceptation_sur_un_trajet_ferme(conducteur, reservation, statut):
+    reservation.trajet.__class__.objects.filter(pk=reservation.trajet_id).update(statut=statut)
+
+    with pytest.raises(Conflit) as exc:
+        services.accepter(conducteur, reservation.id)
+
+    assert exc.value.code == "TRAJET_NON_OUVERT"
