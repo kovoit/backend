@@ -7,6 +7,7 @@ from apps.accounts.api.serializers import UtilisateurResumeSerializer
 from apps.reservations.api.admin_serializers import ReservationAdminSerializer
 from apps.reservations.services import reservations_du_trajet_admin
 from apps.trajets.api.serializers import PointSerializer
+from apps.trajets.api.tarification import TarificationSerializer
 from apps.trajets.models import Trajet
 from apps.vehicules.api.serializers import VehiculeResumeSerializer
 
@@ -44,6 +45,7 @@ class TrajetAdminSerializer(serializers.ModelSerializer):
             "places_total",
             "places_restantes",
             "distance_km",
+            "duree_min",
             "prix_place",
             "statut",
         ]
@@ -62,10 +64,23 @@ class TrajetAdminDetailSerializer(TrajetAdminSerializer):
     vehicule = VehiculeResumeSerializer(read_only=True)
     points = PointSerializer(many=True, read_only=True)
     reservations = serializers.SerializerMethodField()
+    tarification = serializers.SerializerMethodField(
+        help_text="Calcul du prix figé à la publication ; null avant la tarification automatique"
+    )
 
     class Meta(TrajetAdminSerializer.Meta):
-        fields = [*TrajetAdminSerializer.Meta.fields, "vehicule", "points", "reservations"]
+        fields = [
+            *TrajetAdminSerializer.Meta.fields,
+            "vehicule",
+            "points",
+            "reservations",
+            "tarification",
+        ]
         read_only_fields = fields
+
+    @extend_schema_field(TarificationSerializer(allow_null=True))
+    def get_tarification(self, trajet: Trajet) -> dict | None:
+        return TarificationSerializer(trajet.tarification).data if trajet.tarification else None
 
     @extend_schema_field(ReservationAdminSerializer(many=True))
     def get_reservations(self, trajet: Trajet) -> list:

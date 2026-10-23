@@ -74,6 +74,10 @@ def test_detail_avec_points_vehicule_et_reservations(client_admin, trajet, passa
     assert ligne["passager"]["telephone"] == passager.telephone
     assert ligne["point_libelle"] == "Carrefour Adidogomé"
     assert ligne["trajet_id"] == str(trajet.id)
+    # Calcul du prix figé à la publication, commission et net de la place
+    assert detail["tarification"]["prix_place"] == detail["prix_place"] == 300
+    assert detail["tarification"]["parametres"]["taux_commission_pct"] == "15.000"
+    assert (ligne["commission"], ligne["net_conducteur"]) == (45, 255)
 
 
 def test_detail_ne_montre_jamais_le_code_de_depart(client_admin, reservation_acceptee):
