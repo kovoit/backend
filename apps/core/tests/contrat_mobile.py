@@ -78,5 +78,8 @@ def test_export(client_de, passager, conducteur):
         "places": 2,
         "points": [CARREFOUR_ADIDOGOME],
     }
+    estimation = {k: publication[k] for k in ("vehicule_id", "depart_lat", "depart_lng")}
+    estimation |= {k: publication[k] for k in ("arrivee_lat", "arrivee_lng", "places")}
+    _ecrire("estimation", c.post("/api/v1/trajets/estimation/", estimation, format="json"))
     _ecrire("trajet_publie", c.post("/api/v1/trajets/", publication, format="json"))
     _ecrire("erreur_solde", p.post("/api/v1/reservations/", demande, format="json"))
