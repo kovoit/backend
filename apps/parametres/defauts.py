@@ -85,6 +85,15 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
     "delai_confirmation_auto_h": Defaut(
         3, ENTIER, "Clôture automatique après la fin du trajet (h).", "reservation", "h", 1
     ),
+    "delai_resolution_h": Defaut(
+        6,
+        ENTIER,
+        "Réservation acceptée sans prise en charge ni absence : annulée et argent débloqué "
+        "ce délai après le départ (h).",
+        "reservation",
+        "h",
+        1,
+    ),
     "code_depart_max_essais": Defaut(
         5, ENTIER, "Essais max de saisie du code de départ.", "reservation", "essais", 1
     ),

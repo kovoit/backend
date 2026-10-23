@@ -28,6 +28,7 @@ from apps.reservations.services.depart import (
     declarer_absent,
     saisir_code,
 )
+from apps.reservations.services.expiration import expirer_reservations
 
 __all__ = [
     "CREDITER_CONDUCTEUR",
@@ -42,6 +43,7 @@ __all__ = [
     "confirmer_arrivee",
     "declarer_absent",
     "demander_place",
+    "expirer_reservations",
     "get_reservation",
     "get_reservation_admin",
     "lister_reservations",

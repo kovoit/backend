@@ -55,6 +55,14 @@ class ReservationRepository(BaseRepository[Reservation]):
             trajet__depart_le__gt=maintenant,
         )
 
+    def demandes_sans_reponse(self, maintenant: datetime):
+        """Demandes jamais acceptées ni refusées alors que l'heure de départ est passée."""
+        return self.filter(statut=StatutReservation.DEMANDEE, trajet__depart_le__lte=maintenant)
+
+    def acceptees_non_resolues(self, limite: datetime):
+        """Places acceptées sans code de départ ni absence, départ antérieur à `limite`."""
+        return self.filter(statut=StatutReservation.ACCEPTEE, trajet__depart_le__lte=limite)
+
     def a_cloturer(self, limite: datetime):
         return self.filter(statut=StatutReservation.TERMINEE, terminee_le__lte=limite)
 

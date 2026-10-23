@@ -46,6 +46,9 @@ ACTIONS: dict[str, Action] = {
     "reservation.accepter": Action("Acceptation d'une réservation", C.METIER, "reservation"),
     "reservation.refuser": Action("Refus d'une réservation", C.METIER, "reservation"),
     "reservation.annuler": Action("Annulation d'une réservation", C.METIER, "reservation"),
+    "reservation.expirer": Action(
+        "Expiration automatique d'une réservation", C.METIER, "reservation"
+    ),
     "reservation.saisir_code": Action("Saisie du code de départ", C.METIER, "reservation"),
     "reservation.declarer_absent": Action("Passager déclaré absent", C.METIER, "reservation"),
     "reservation.confirmer_arrivee": Action("Confirmation d'arrivée", C.METIER, "reservation"),

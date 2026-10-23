@@ -14,6 +14,10 @@ app.conf.beat_schedule = {
         "task": "apps.reservations.tasks.cloturer_reservations",
         "schedule": 15 * 60,
     },
+    "expiration-des-reservations-en-suspens": {
+        "task": "apps.reservations.tasks.expirer_reservations_en_suspens",
+        "schedule": 15 * 60,
+    },
     "fin-des-suspensions": {
         "task": "apps.accounts.tasks.reactiver_suspensions",
         "schedule": 60 * 60,
