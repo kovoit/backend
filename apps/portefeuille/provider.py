@@ -26,6 +26,7 @@ class Resultat:
     reference: str
     statut: str  # S.VALIDEE | S.EN_ATTENTE | S.ECHOUEE
     code: str = ""  # motif d'échec du fournisseur (ex. EXPIRE, ANNULE)
+    reference_operateur: str = ""  # référence Flooz / Mixx du paiement (support, réclamations)
 
 
 class PaiementProvider:

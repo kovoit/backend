@@ -1,15 +1,15 @@
 """PayGate Global (Togo) : encaissement Flooz et Mixx (réseau « TMONEY » chez PayGate).
 
-API utilisée (/api/v1/pay confirmé par le guide d'intégration du compte marchand ;
-/api/v2/status et le callback restent à confirmer avec ce même guide) :
+API utilisée (confirmée par le guide d'intégration du compte marchand) :
   POST {PAYGATE_URL}/api/v1/pay     auth_token, phone_number, amount, description,
                                     identifier, network → { tx_reference, status }
        status : 0 transaction enregistrée, 2 jeton invalide, 4 paramètres invalides, 6 doublon
-  POST {PAYGATE_URL}/api/v2/status  auth_token, identifier → { tx_reference, status, … }
+  POST {PAYGATE_URL}/api/v2/status  auth_token, identifier → { tx_reference, payment_reference,
+                                    status, datetime, payment_method }
        status : 0 payé, 2 en cours, 4 expiré, 6 annulé
-Le versement (retrait vers Flooz / Mixx) n'est pas documenté publiquement : les retraits sont
-enregistrés en attente et versés manuellement par Kovoit (voir le Django admin).
-À vérifier avec le guide d'intégration du compte marchand avant la mise en production.
+Callback : POST JSON (tx_reference, identifier, payment_reference, amount, datetime, …), non cru.
+Le guide ne prévoit pas de versement par API : les retraits sont enregistrés en attente et
+versés manuellement par Kovoit (voir le Django admin).
 """
 
 import json
@@ -73,7 +73,8 @@ class PayGateProvider(PaiementProvider):
     def verifier(self, identifiant, reference) -> Resultat:
         reponse = _appeler("/api/v2/status", {"identifier": identifiant})
         statut, code = STATUTS_PAIEMENT.get(reponse.get("status"), (S.EN_ATTENTE, ""))
-        return Resultat(str(reponse.get("tx_reference") or reference), statut, code)
+        operateur = str(reponse.get("payment_reference") or "")
+        return Resultat(str(reponse.get("tx_reference") or reference), statut, code, operateur)
 
     def verser(self, utilisateur, montant, moyen, telephone) -> Resultat:
         return Resultat("", S.EN_ATTENTE, "VERSEMENT_MANUEL")

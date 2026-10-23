@@ -12,9 +12,9 @@ class TransactionAdmin(admin.ModelAdmin):
     donc par le journal d'audit."""
 
     list_display = ["cree_le", "utilisateur", "type", "montant", "statut", "moyen_paiement",
-                    "telephone", "reference_externe"]  # fmt: skip
+                    "telephone", "reference_externe", "reference_operateur"]  # fmt: skip
     list_filter = ["type", "statut", "moyen_paiement"]
-    search_fields = ["utilisateur__email", "reference_externe", "telephone"]
+    search_fields = ["utilisateur__email", "reference_externe", "reference_operateur", "telephone"]
     actions = ["marquer_verse", "refuser_retrait"]
 
     def has_add_permission(self, request):

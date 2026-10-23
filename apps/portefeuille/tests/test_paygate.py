@@ -28,7 +28,11 @@ class FauxPayGate:
         self.appels.append((chemin, donnees))
         if chemin == "/api/v1/pay":
             return {"tx_reference": "PG-123", "status": self.statut_initiation}
-        return {"tx_reference": "PG-123", "status": self.statut_paiement}
+        return {
+            "tx_reference": "PG-123",
+            "payment_reference": "FLZ-789",
+            "status": self.statut_paiement,
+        }
 
 
 @pytest.fixture
@@ -74,7 +78,8 @@ def test_le_callback_ne_suffit_pas_a_crediter(api_client, utilisateur, paygate):
     paygate.statut_paiement = 0
     reponse = api_client.post(f"{CALLBACK}?cle=cle-callback", {"identifier": str(ligne.id)})
     assert reponse.status_code == 200
-    assert Transaction.objects.get(id=ligne.id).statut == "validee"
+    validee = Transaction.objects.get(id=ligne.id)
+    assert (validee.statut, validee.reference_operateur) == ("validee", "FLZ-789")
     # Second callback : pas de double crédit
     api_client.post(f"{CALLBACK}?cle=cle-callback", {"identifier": str(ligne.id)})
     assert services.solde(utilisateur).total == 2000

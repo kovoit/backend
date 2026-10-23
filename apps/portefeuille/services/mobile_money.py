@@ -86,7 +86,10 @@ def _actualiser(transaction_id, systeme: bool) -> Transaction:
         if ligne.statut != S.EN_ATTENTE:  # déjà traitée (callback et client en même temps)
             return ligne
         ligne = transaction_repository.update(
-            ligne, statut=resultat.statut, reference_externe=resultat.reference
+            ligne,
+            statut=resultat.statut,
+            reference_externe=resultat.reference,
+            reference_operateur=resultat.reference_operateur,
         )
         journaliser(
             "paiement.confirmer",

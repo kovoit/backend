@@ -52,6 +52,9 @@ class Transaction(BaseModel):
         help_text="Renseigné pour les mouvements passés par Mobile Money (recharge, retrait).",
     )
     reference_externe = models.CharField(max_length=64, blank=True)
+    reference_operateur = models.CharField(
+        max_length=64, blank=True, help_text="Référence Flooz / Mixx, utile en cas de réclamation"
+    )
     telephone = models.CharField(
         max_length=20, blank=True, help_text="Numéro Mobile Money débité ou crédité"
     )
