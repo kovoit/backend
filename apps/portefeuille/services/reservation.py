@@ -62,8 +62,23 @@ def debiter(reservation) -> None:
 
 
 def crediter_conducteur(reservation) -> None:
-    """Le conducteur reçoit le prix ; les frais de service restent à Kovoit."""
-    ecrire(reservation.trajet.conducteur, T.CREDIT, reservation.prix, reservation)
+    """Le conducteur reçoit le prix payé, puis la commission Kovoit en est prélevée : deux
+    lignes réelles du journal (crédit, commission). Montants figés sur la réservation."""
+    from apps.audit.services import journaliser
+
+    conducteur = reservation.trajet.conducteur
+    ecrire(conducteur, T.CREDIT, reservation.prix, reservation)
+    ecrire(conducteur, T.COMMISSION, reservation.commission, reservation)
+    journaliser(
+        "portefeuille.reverser",
+        ressource=reservation,
+        details={
+            "paye_passager": reservation.prix,
+            "commission": reservation.commission,
+            "net_conducteur": reservation.prix - reservation.commission,
+            "taux_commission_pct": reservation.taux_commission_pct,
+        },
+    )
 
 
 def rembourser(reservation) -> None:

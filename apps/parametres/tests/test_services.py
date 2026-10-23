@@ -20,11 +20,11 @@ def test_initialiser_cree_tous_les_parametres_une_seule_fois():
 
 
 def test_initialiser_n_ecrase_pas_une_valeur_modifiee(parametres_initialises):
-    services.modifier_param("prix_simulation", 400)
+    services.modifier_param("prix_carburant_litre", 400)
 
     services.initialiser_parametres()
 
-    assert Parametre.objects.get(cle="prix_simulation").valeur == 400
+    assert Parametre.objects.get(cle="prix_carburant_litre").valeur == 400
 
 
 def test_get_param_lit_la_valeur_en_base(parametres_initialises):
@@ -33,11 +33,11 @@ def test_get_param_lit_la_valeur_en_base(parametres_initialises):
 
 
 def test_get_param_reflete_une_modification_malgre_le_cache(parametres_initialises):
-    assert services.get_param("prix_simulation") == 300
+    assert services.get_param("prix_carburant_litre") == 817
 
-    services.modifier_param("prix_simulation", 350)
+    services.modifier_param("prix_carburant_litre", 350)
 
-    assert services.get_param("prix_simulation") == 350
+    assert services.get_param("prix_carburant_litre") == 350
 
 
 def test_get_param_absent_en_base_renvoie_la_valeur_de_depart():
@@ -50,7 +50,7 @@ def test_get_param_inconnu_leve_une_erreur():
 
 
 def test_modifier_enregistre_l_auteur(parametres_initialises, admin):
-    parametre = services.modifier_param("frais_service", 50, par=admin)
+    parametre = services.modifier_param("cout_horaire_conducteur", 50, par=admin)
 
     assert parametre.valeur == 50
     assert parametre.modifie_par == admin
@@ -65,10 +65,10 @@ def test_modifier_cree_le_parametre_s_il_n_est_pas_encore_en_base():
 @pytest.mark.parametrize(
     ("cle", "valeur"),
     [
-        ("prix_simulation", 300.5),  # entier attendu
-        ("prix_simulation", -10),  # négatif
-        ("prix_simulation", "300"),  # texte
-        ("prix_simulation", True),  # booléen
+        ("prix_carburant_litre", 300.5),  # entier attendu
+        ("prix_carburant_litre", -10),  # négatif
+        ("prix_carburant_litre", "300"),  # texte
+        ("prix_carburant_litre", True),  # booléen
         ("rayon_depart_km", None),
     ],
 )

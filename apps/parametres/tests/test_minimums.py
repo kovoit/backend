@@ -39,7 +39,7 @@ def test_duree_de_suspension_nulle_refusee():
 
 def test_zero_accepte_quand_il_a_un_sens(client_admin):
     # Pas de frais de service, pas de délai d'annulation tardive : choix métier possibles
-    for cle in ("frais_service", "delai_annulation_min"):
+    for cle in ("cout_horaire_conducteur", "delai_annulation_min"):
         assert client_admin.patch(f"{URL}{cle}/", {"valeur": 0}, format="json").status_code == 200
 
 

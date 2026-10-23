@@ -4,6 +4,7 @@ from apps.trajets.api import views
 
 urlpatterns = [
     path("trajets/", views.PublierVue.as_view(), name="trajets"),
+    path("trajets/estimation/", views.EstimationVue.as_view(), name="trajets-estimation"),
     path("trajets/recherche/", views.RechercheVue.as_view(), name="trajets-recherche"),
     path("trajets/mes-trajets/", views.MesTrajetsVue.as_view(), name="mes-trajets"),
     path("trajets/<uuid:pk>/", views.TrajetDetailVue.as_view(), name="trajet-detail"),

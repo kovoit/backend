@@ -7,6 +7,7 @@ from apps.core.api.reponses import succes
 from apps.kyc.api.permissions import PeutPublier
 from apps.trajets import services
 from apps.trajets.api import serializers as s
+from apps.trajets.api.tarification import TarificationSerializer
 
 TAG = "trajets"
 
@@ -25,6 +26,29 @@ class PublierVue(APIView):
         entree.is_valid(raise_exception=True)
         trajet = services.publier(request.user, **entree.validated_data)
         return succes("Trajet publié.", s.TrajetConducteurSerializer(trajet).data, 201)
+
+
+class EstimationVue(APIView):
+    permission_classes = [*CONNECTE, CompteActif, PeutPublier]
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Estimer le prix avant de publier (calculé par Kovoit, rien n'est enregistré)",
+        request=s.EstimationSerializer,
+        responses=TarificationSerializer,
+    )
+    def post(self, request):
+        entree = s.EstimationSerializer(data=request.data)
+        entree.is_valid(raise_exception=True)
+        d = entree.validated_data
+        devis = services.estimer(
+            request.user,
+            vehicule_id=d["vehicule_id"],
+            depart=(d["depart_lat"], d["depart_lng"]),
+            arrivee=(d["arrivee_lat"], d["arrivee_lng"]),
+            places=d["places"],
+        )
+        return succes("Prix estimé.", TarificationSerializer(devis.instantane()).data)
 
 
 class RechercheVue(APIView):

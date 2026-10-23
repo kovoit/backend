@@ -1,6 +1,6 @@
 """Portefeuille (PRD §7). Chaque mouvement est une ligne du journal `Transaction`.
 
-solde_total = recharge + credit + remboursement − debit − retrait   (lignes comptées : voir
+solde_total = recharge + credit + remboursement − debit − retrait − commission  (voir
 bloque      = blocage − deblocage                                    repository.COMPTEES)
 disponible  = solde_total − bloque
 """
@@ -52,7 +52,7 @@ class Solde:
 def solde(utilisateur) -> Solde:
     s = transaction_repository.sommes_par_type(utilisateur)
     total = s.get(T.RECHARGE, 0) + s.get(T.CREDIT, 0) + s.get(T.REMBOURSEMENT, 0)
-    total -= s.get(T.DEBIT, 0) + s.get(T.RETRAIT, 0)
+    total -= s.get(T.DEBIT, 0) + s.get(T.RETRAIT, 0) + s.get(T.COMMISSION, 0)
     bloque = s.get(T.BLOCAGE, 0) - s.get(T.DEBLOCAGE, 0)
     return Solde(total=total, bloque=bloque, disponible=total - bloque)
 

@@ -14,6 +14,7 @@ class VehiculeSerializer(serializers.ModelSerializer):
             "couleur",
             "immatriculation",
             "nb_places",
+            "consommation_l_100km",
             "photo",
             "cree_le",
         ]

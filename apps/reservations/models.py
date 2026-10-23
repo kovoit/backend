@@ -39,7 +39,14 @@ class Reservation(BaseModel):
     arrivee_libelle = models.CharField(max_length=255, blank=True)
     distance_km = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     prix = models.PositiveIntegerField("prix (F CFA)")
+    # Ancien modèle (frais payés par le passager) : 0 depuis la commission à la charge du conducteur
     frais_service = models.PositiveIntegerField("frais de service (F CFA)", default=0)
+    # Figés à la demande, au taux de la publication : commission + net_conducteur == prix
+    taux_commission_pct = models.DecimalField(
+        "taux de commission (%)", max_digits=5, decimal_places=2, default=0
+    )
+    commission = models.PositiveIntegerField("commission Kovoit (F CFA)", default=0)
+    net_conducteur = models.PositiveIntegerField("net reversé au conducteur (F CFA)", default=0)
     # Complément payé par Mobile Money quand le portefeuille ne suffisait pas
     moyen_paiement = models.CharField(max_length=10, choices=MoyenPaiement.choices, blank=True)
     complement_paye = models.PositiveIntegerField("complément payé (F CFA)", default=0)

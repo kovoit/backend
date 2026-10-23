@@ -59,6 +59,13 @@ def valider_valeur(cle: str, valeur: Any) -> None:
         raise ValeurParametreInvalide(f"« {cle} » doit être un nombre.")
     if defaut.type_valeur == ENTIER and not isinstance(valeur, int):
         raise ValeurParametreInvalide(f"« {cle} » doit être un nombre entier.")
+    if defaut.maximum is not None and valeur > defaut.maximum:
+        maximum = str(defaut.maximum).replace(".", ",")
+        unite = f" {defaut.unite}" if defaut.unite else ""
+        raise ValeurParametreInvalide(
+            f"« {cle} » doit valoir au plus {maximum}{unite}.",
+            erreurs={"valeur": [f"Maximum : {maximum}{unite}."]},
+        )
     if valeur < defaut.minimum:
         # Écriture française : 0,1 km
         minimum = str(defaut.minimum).replace(".", ",")

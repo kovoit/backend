@@ -68,7 +68,10 @@ class IndicateursPeriodeSerializer(serializers.Serializer):
     trajets_publies = serializers.IntegerField()
     trajets_termines = serializers.IntegerField()
     passagers_transportes = serializers.IntegerField()
-    economies_realisees = serializers.IntegerField()
+    economies_realisees = serializers.IntegerField(help_text="Net reçu par les conducteurs")
+    commissions_kovoit = serializers.IntegerField(
+        help_text="Commissions réellement prélevées (journal des transactions)"
+    )
     utilisateurs_verifies = serializers.IntegerField()
     conducteurs_verifies = serializers.IntegerField()
 

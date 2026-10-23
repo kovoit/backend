@@ -24,8 +24,8 @@ def test_admin_liste_les_parametres(client_admin, parametres_initialises):
     corps = reponse.json()
     assert corps["statut"] == "success"
     assert len(corps["reponse"]) == len(PARAMETRES_PAR_DEFAUT)
-    prix = next(p for p in corps["reponse"] if p["cle"] == "prix_simulation")
-    assert prix["valeur"] == 300
+    prix = next(p for p in corps["reponse"] if p["cle"] == "prix_carburant_litre")
+    assert prix["valeur"] == 817
     assert prix["type_valeur"] == "entier"
 
 
@@ -49,7 +49,7 @@ def test_admin_modifie_un_parametre(client_admin, admin, parametres_initialises)
 
 
 def test_valeur_invalide_renvoie_400(client_admin, parametres_initialises):
-    reponse = client_admin.patch(url_detail("prix_simulation"), {"valeur": -5}, format="json")
+    reponse = client_admin.patch(url_detail("prix_carburant_litre"), {"valeur": -5}, format="json")
 
     assert reponse.status_code == status.HTTP_400_BAD_REQUEST
     assert reponse.json()["statut"] == "failed"
@@ -64,10 +64,12 @@ def test_cle_inconnue_renvoie_404(client_admin, parametres_initialises):
 
 
 def test_utilisateur_non_admin_ne_peut_pas_modifier(client_utilisateur, parametres_initialises):
-    reponse = client_utilisateur.patch(url_detail("prix_simulation"), {"valeur": 1}, format="json")
+    reponse = client_utilisateur.patch(
+        url_detail("prix_carburant_litre"), {"valeur": 1}, format="json"
+    )
 
     assert reponse.status_code == status.HTTP_403_FORBIDDEN
-    assert services.get_param("prix_simulation") == 300
+    assert services.get_param("prix_carburant_litre") == 817
 
 
 @pytest.mark.django_db

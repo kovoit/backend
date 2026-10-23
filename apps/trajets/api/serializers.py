@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.confiance.api.serializers import PersonneSerializer
 from apps.portefeuille.api.serializers import ApercuPaiementSerializer
 from apps.portefeuille.services import apercu_paiement
-from apps.tarification.services import frais_service
+from apps.trajets.api.tarification import TarificationSerializer
 from apps.trajets.models import PointPriseEnCharge, Trajet
 from apps.vehicules.api.serializers import VehiculeResumeSerializer
 
@@ -22,7 +22,10 @@ class TrajetSerializer(serializers.ModelSerializer):
     conducteur = PersonneSerializer(read_only=True)
     vehicule = VehiculeResumeSerializer(read_only=True)
     points = PointSerializer(many=True, read_only=True)
-    frais_service = serializers.SerializerMethodField()
+    frais_service = serializers.SerializerMethodField(
+        help_text="Toujours 0 : la commission Kovoit est à la charge du conducteur (champ conservé "
+        "pour la compatibilité des applications)."
+    )
 
     class Meta:
         model = Trajet
@@ -41,13 +44,14 @@ class TrajetSerializer(serializers.ModelSerializer):
             "places_total",
             "places_restantes",
             "distance_km",
+            "duree_min",
             "prix_place",
             "frais_service",
             "statut",
         ]
 
     def get_frais_service(self, trajet: Trajet) -> int:
-        return frais_service()
+        return 0
 
 
 class TrajetDetailSerializer(TrajetSerializer):
@@ -63,15 +67,22 @@ class TrajetDetailSerializer(TrajetSerializer):
 
     @extend_schema_field(ApercuPaiementSerializer)
     def get_paiement(self, trajet: Trajet) -> dict:
-        montant = trajet.prix_place + frais_service()
-        return apercu_paiement(self.context["utilisateur"], montant)
+        return apercu_paiement(self.context["utilisateur"], trajet.prix_place)
 
 
 class TrajetConducteurSerializer(TrajetSerializer):
     nb_demandes = serializers.IntegerField(read_only=True, default=0)
+    tarification = serializers.SerializerMethodField(
+        help_text="Détail du calcul du prix, figé à la publication (null : trajet publié avant "
+        "la tarification automatique)"
+    )
 
     class Meta(TrajetSerializer.Meta):
-        fields = [*TrajetSerializer.Meta.fields, "nb_demandes", "position_le"]
+        fields = [*TrajetSerializer.Meta.fields, "nb_demandes", "position_le", "tarification"]
+
+    @extend_schema_field(TarificationSerializer(allow_null=True))
+    def get_tarification(self, trajet: Trajet) -> dict | None:
+        return TarificationSerializer(trajet.tarification).data if trajet.tarification else None
 
 
 class PointEntreeSerializer(serializers.Serializer):
@@ -91,6 +102,17 @@ class PublicationSerializer(serializers.Serializer):
     depart_le = serializers.DateTimeField()
     places = serializers.IntegerField(min_value=1)
     points = PointEntreeSerializer(many=True, min_length=1, max_length=3)
+
+
+class EstimationSerializer(serializers.Serializer):
+    """Mêmes données que la publication, pour le prix affiché avant de publier."""
+
+    vehicule_id = serializers.UUIDField()
+    depart_lat = serializers.FloatField(**LATITUDE)
+    depart_lng = serializers.FloatField(**LONGITUDE)
+    arrivee_lat = serializers.FloatField(**LATITUDE)
+    arrivee_lng = serializers.FloatField(**LONGITUDE)
+    places = serializers.IntegerField(min_value=1)
 
 
 class RechercheSerializer(serializers.Serializer):

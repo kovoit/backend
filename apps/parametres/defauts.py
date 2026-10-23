@@ -5,13 +5,15 @@ Le code lit toujours la valeur en base via `get_param()`. L'ordre du registre es
 l'écran Paramètres du back-office.
 """
 
-from dataclasses import dataclass
+from apps.parametres.defauts_tarification import PARAMETRES_TARIFICATION
+from apps.parametres.types import DECIMAL, ENTIER, Defaut
 
-ENTIER = "entier"
-DECIMAL = "decimal"
+__all__ = ["DECIMAL", "ENTIER", "GROUPES", "PARAMETRES_PAR_DEFAUT", "Defaut"]
+
 
 GROUPES = {
-    "prix": "Prix et portefeuille",
+    "tarification": "Tarification des trajets",
+    "prix": "Portefeuille et paiements",
     "correspondance": "Correspondance des trajets",
     "reservation": "Réservation, annulation et clôture",
     "fiabilite": "Fiabilité et suspension",
@@ -20,24 +22,8 @@ GROUPES = {
 }
 
 
-@dataclass(frozen=True)
-class Defaut:
-    valeur: int | float
-    type_valeur: str
-    description: str
-    groupe: str
-    unite: str = ""
-    # Plus petite valeur acceptée : 0 casserait certaines règles (ex. suspension sans fin)
-    minimum: int | float = 0
-
-
 PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
-    "prix_simulation": Defaut(
-        300, ENTIER, "Prix temporaire par passager (F CFA).", "prix", "F CFA"
-    ),
-    "frais_service": Defaut(
-        0, ENTIER, "Frais de service Kovoit par passager (F CFA).", "prix", "F CFA"
-    ),
+    **PARAMETRES_TARIFICATION,
     "recharge_min": Defaut(
         500, ENTIER, "Montant minimum d'une recharge simulée (F CFA).", "prix", "F CFA"
     ),

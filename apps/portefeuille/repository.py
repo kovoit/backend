@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from django.db.models import Q, Sum
+from django.db.models import Case, F, IntegerField, Q, Sum, When
 
 from apps.core.repository import BaseRepository
 from apps.portefeuille.models import StatutTransaction, Transaction, TypeTransaction
@@ -8,6 +8,20 @@ from apps.portefeuille.models import StatutTransaction, Transaction, TypeTransac
 # Lignes qui comptent dans le solde : validées, et retraits en attente (montant déjà retenu)
 COMPTEES = Q(statut=StatutTransaction.VALIDEE) | Q(
     type=TypeTransaction.RETRAIT, statut=StatutTransaction.EN_ATTENTE
+)
+
+
+# Ce que le conducteur garde réellement : crédits moins commissions Kovoit prélevées
+NET_CONDUCTEUR = Sum(
+    Case(
+        When(type=TypeTransaction.COMMISSION, then=-F("montant")),
+        default=F("montant"),
+        output_field=IntegerField(),
+    )
+)
+LIGNES_CONDUCTEUR = Q(
+    type__in=[TypeTransaction.CREDIT, TypeTransaction.COMMISSION],
+    statut=StatutTransaction.VALIDEE,
 )
 
 
@@ -78,13 +92,22 @@ class TransactionRepository(BaseRepository[Transaction]):
         return self.filter(utilisateur=utilisateur).order_by("-cree_le")
 
     def credits_de(self, utilisateur, depuis: datetime | None = None):
-        queryset = self.filter(utilisateur=utilisateur, type=TypeTransaction.CREDIT)
+        """Crédits et commissions du conducteur (lignes du net qu'il a réellement reçu)."""
+        queryset = self.filter(LIGNES_CONDUCTEUR, utilisateur=utilisateur)
         return queryset.filter(cree_le__gte=depuis) if depuis else queryset
 
     def total_credits(self, utilisateur=None, depuis: datetime | None = None) -> int:
-        queryset = self.filter(type=TypeTransaction.CREDIT)
+        """Net reçu par les conducteurs (crédits − commissions)."""
+        queryset = self.filter(LIGNES_CONDUCTEUR)
         if utilisateur is not None:
             queryset = queryset.filter(utilisateur=utilisateur)
+        if depuis:
+            queryset = queryset.filter(cree_le__gte=depuis)
+        return queryset.aggregate(total=NET_CONDUCTEUR)["total"] or 0
+
+    def total_commissions(self, depuis: datetime | None = None) -> int:
+        """Commissions Kovoit réellement prélevées (lignes du journal, pas un calcul)."""
+        queryset = self.filter(type=TypeTransaction.COMMISSION, statut=StatutTransaction.VALIDEE)
         if depuis:
             queryset = queryset.filter(cree_le__gte=depuis)
         return queryset.aggregate(total=Sum("montant"))["total"] or 0
@@ -98,7 +121,7 @@ class TransactionRepository(BaseRepository[Transaction]):
                 "reservation__trajet__depart_libelle",
                 "reservation__trajet__arrivee_libelle",
             )
-            .annotate(montant=Sum("montant"))
+            .annotate(montant=NET_CONDUCTEUR)
             .order_by("-reservation__trajet__depart_le")
         )
 

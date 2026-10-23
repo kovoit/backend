@@ -61,6 +61,9 @@ ACTIONS: dict[str, Action] = {
         "Confirmation d'un paiement Mobile Money", C.METIER, "utilisateur"
     ),
     "portefeuille.verser": Action("Versement manuel d'un retrait", C.ADMIN, "utilisateur"),
+    "portefeuille.reverser": Action(
+        "Paiement reversé au conducteur, commission prélevée", C.METIER, "reservation"
+    ),
     # Confiance, partage, paramètres
     "avis.noter": Action("Note d'un trajet", C.METIER, "reservation"),
     "signalement.creer": Action("Signalement d'un problème", C.METIER, "reservation"),

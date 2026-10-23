@@ -55,7 +55,8 @@ def test_tableau_de_bord_sur_30_jours(client_admin, conducteur, passager):
         "trajets_publies": 2,
         "trajets_termines": 1,
         "passagers_transportes": 1,
-        "economies_realisees": 300,
+        "economies_realisees": 255,  # net des conducteurs
+        "commissions_kovoit": 45,  # lignes « commission » du journal
         "utilisateurs_verifies": 2,
         "conducteurs_verifies": 1,
     }

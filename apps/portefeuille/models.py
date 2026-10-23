@@ -12,6 +12,8 @@ class TypeTransaction(models.TextChoices):
     CREDIT = "credit", "Crédit"
     RETRAIT = "retrait", "Retrait"
     REMBOURSEMENT = "remboursement", "Remboursement"
+    # Commission Kovoit prélevée sur le crédit du conducteur (même réservation)
+    COMMISSION = "commission", "Commission Kovoit"
 
 
 class MoyenPaiement(models.TextChoices):

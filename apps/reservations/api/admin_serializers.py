@@ -29,6 +29,9 @@ class ReservationAdminSerializer(serializers.ModelSerializer):
             "depart_le",
             "prix",
             "frais_service",
+            "taux_commission_pct",
+            "commission",
+            "net_conducteur",
             "statut",
             "cree_le",
         ]

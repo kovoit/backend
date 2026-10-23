@@ -19,7 +19,9 @@ def test_osrm_renvoie_la_distance_en_km(settings):
     settings.OSRM_URL = "https://osrm.exemple"
     with mock.patch(
         "urllib.request.urlopen",
-        return_value=reponse_osrm({"code": "Ok", "routes": [{"distance": 8423.7}]}),
+        return_value=reponse_osrm(
+            {"code": "Ok", "routes": [{"distance": 8423.7, "duration": 912.0}]}
+        ),
     ) as appel:
         assert OsrmProvider().distance_km(DEPART, ARRIVEE) == 8.4237
 

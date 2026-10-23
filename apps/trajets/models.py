@@ -29,7 +29,11 @@ class Trajet(BaseModel):
     places_total = models.PositiveSmallIntegerField()
     places_restantes = models.PositiveSmallIntegerField()
     distance_km = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    duree_min = models.PositiveIntegerField("durée estimée (min)", null=True, blank=True)
     prix_place = models.PositiveIntegerField("prix par place (F CFA)")
+    # Instantané du calcul au moment de la publication (formule, paramètres, montants) : le
+    # prix confirmé ne change jamais, même si un paramètre de tarification est modifié ensuite.
+    tarification = models.JSONField(default=dict, blank=True)
     statut = models.CharField(
         max_length=10, choices=StatutTrajet.choices, default=StatutTrajet.PUBLIE, db_index=True
     )

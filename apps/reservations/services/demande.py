@@ -8,7 +8,7 @@ from apps.reservations.models import Reservation
 from apps.reservations.repository import reservation_repository
 from apps.reservations.services.commun import libelle_trajet, notifier_conducteur
 from apps.routage.services import distance_route_km
-from apps.tarification.services import frais_service
+from apps.tarification.services import repartition
 from apps.trajets.models import StatutTrajet
 from apps.trajets.repository import point_repository, trajet_repository
 
@@ -36,6 +36,7 @@ def demander_place(
         if reservation_repository.active_existe(trajet, passager):
             raise Conflit("Vous avez déjà une réservation sur ce trajet.", code="DEJA_RESERVE")
         point = point_repository.get_du_trajet(trajet, point_id)
+        taux = (trajet.tarification.get("parametres") or {}).get("taux_commission_pct", "0")
 
         reservation = reservation_repository.create(
             trajet=trajet,
@@ -46,7 +47,9 @@ def demander_place(
             arrivee_libelle=arrivee_libelle,
             distance_km=distance_route_km((point.lat, point.lng), (arrivee_lat, arrivee_lng)),
             prix=trajet.prix_place,
-            frais_service=frais_service(),
+            # Taux figé à la publication (absent des trajets publiés avant la tarification : 0)
+            taux_commission_pct=taux,
+            **repartition(trajet.prix_place, taux),
         )
         complement = portefeuille.bloquer(reservation, moyen_paiement)
         if complement:

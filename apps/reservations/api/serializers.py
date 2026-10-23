@@ -31,6 +31,8 @@ CHAMPS_COMMUNS = [
     "cloturee_le",
 ]
 
+FINANCES_CONDUCTEUR = ["taux_commission_pct", "commission", "net_conducteur"]
+
 
 class ReservationPassagerSerializer(serializers.ModelSerializer):
     """Vue du passager : seule vue qui contient le code de départ."""
@@ -63,7 +65,8 @@ class ReservationConducteurSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reservation
-        fields = ["trajet", "passager", *CHAMPS_COMMUNS, "essais_code"]
+        # Commission Kovoit à la charge du conducteur : ce qu'il touchera pour cette place
+        fields = [*FINANCES_CONDUCTEUR, "trajet", "passager", *CHAMPS_COMMUNS, "essais_code"]
 
 
 class DemandeSerializer(serializers.Serializer):

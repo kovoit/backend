@@ -18,6 +18,7 @@ class ParametreSerializer(serializers.ModelSerializer):
     groupe = serializers.SerializerMethodField()
     unite = serializers.SerializerMethodField()
     minimum = serializers.SerializerMethodField()
+    maximum = serializers.SerializerMethodField()
     modifie_par = AdminResumeSerializer(read_only=True, allow_null=True)
 
     class Meta:
@@ -30,6 +31,7 @@ class ParametreSerializer(serializers.ModelSerializer):
             "groupe",
             "unite",
             "minimum",
+            "maximum",
             "modifie_le",
             "modifie_par",
         ]
@@ -54,6 +56,9 @@ class ParametreSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.FloatField())
     def get_minimum(self, parametre: Parametre) -> int | float:
         return self._defaut(parametre).minimum
+
+    def get_maximum(self, parametre: Parametre) -> float | None:
+        return self._defaut(parametre).maximum
 
 
 class ModificationParametreSerializer(serializers.Serializer):

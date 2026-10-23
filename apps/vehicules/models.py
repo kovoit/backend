@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -26,6 +28,15 @@ class Vehicule(BaseModel):
         validators=[MinValueValidator(2), MaxValueValidator(9)],
     )
     photo = models.ImageField(upload_to="vehicules/", blank=True)
+    consommation_l_100km = models.DecimalField(
+        "consommation (L/100 km)",
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.5")), MaxValueValidator(Decimal(30))],
+        help_text="Vide : consommation de référence du type (paramètre de tarification).",
+    )
 
     class Meta(BaseModel.Meta):
         verbose_name = "véhicule"

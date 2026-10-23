@@ -13,6 +13,7 @@ CHAMPS_MODIFIABLES = {
     "immatriculation",
     "nb_places",
     "photo",
+    "consommation_l_100km",
 }
 
 

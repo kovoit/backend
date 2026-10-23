@@ -37,6 +37,21 @@ def reglages_de_test(settings, tmp_path):
     cache.clear()
 
 
+@pytest.fixture(autouse=True)
+def prix_des_trajets_de_test(monkeypatch):
+    """Prix de place des trajets de test fixé à 300 F (plancher du calcul, qui donnerait 170 F
+    pour Adidogomé → Grand Marché) : les tests du portefeuille restent lisibles. La formule est
+    testée avec ses vrais paramètres dans apps/tarification/tests. Commission 15 % : 45 F,
+    net conducteur 255 F par place."""
+    from dataclasses import replace
+
+    from apps.parametres.defauts import PARAMETRES_PAR_DEFAUT
+
+    # Valeur de départ seulement (rien en base ni dans l'audit) : un test peut la modifier
+    defaut = replace(PARAMETRES_PAR_DEFAUT["prix_minimum_place"], valeur=300)
+    monkeypatch.setitem(PARAMETRES_PAR_DEFAUT, "prix_minimum_place", defaut)
+
+
 @pytest.fixture
 def api_client():
     return APIClient()

@@ -122,7 +122,9 @@ def test_absence_trop_tot_puis_acceptee_apres_la_tolerance(
 
     assert reservation.statut == S.ABSENT and reservation.absence_lat == 6.17
     assert portefeuille.solde(passager).total == 4700
-    assert portefeuille.solde(conducteur).total == 300
+    assert (
+        portefeuille.solde(conducteur).total == 255
+    )  # 300 F payés − 45 F de commission Kovoit (15 %)
 
 
 def monter_puis_terminer(conducteur, reservation):
@@ -143,7 +145,9 @@ def test_fin_de_trajet_puis_confirmation_credite_le_conducteur(
     reservation = services.confirmer_arrivee(passager, reservation.id)
 
     assert reservation.statut == S.CLOTUREE
-    assert portefeuille.solde(conducteur).total == 300
+    assert (
+        portefeuille.solde(conducteur).total == 255
+    )  # 300 F payés − 45 F de commission Kovoit (15 %)
 
 
 def test_cloture_automatique_apres_le_delai(conducteur, reservation_acceptee):

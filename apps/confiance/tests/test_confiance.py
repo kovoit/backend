@@ -64,7 +64,9 @@ def test_litige_tranche_en_faveur_du_conducteur(passager, admin, conducteur, res
 
     services.traiter_signalement(admin, signalement.id, "Non fondé", "crediter_conducteur")
 
-    assert portefeuille.solde(conducteur).total == 300
+    assert (
+        portefeuille.solde(conducteur).total == 255
+    )  # 300 F payés − 45 F de commission Kovoit (15 %)
 
 
 def test_fiabilite_et_suspension_automatique(passager, conducteur):

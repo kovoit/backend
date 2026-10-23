@@ -101,7 +101,8 @@ def test_litige_tranche_pour_le_conducteur_le_paie(client_admin, litige, conduct
     assert reponse.json()["reponse"]["reservation"]["statut"] == "cloturee"
     assert reponse.json()["reponse"]["decision"] == "crediter_conducteur"
     reservation = Reservation.objects.get(pk=litige.reservation_id)
-    assert portefeuille.solde(conducteur).disponible == avant + reservation.prix
+    assert portefeuille.solde(conducteur).disponible == avant + reservation.net_conducteur
+    assert reservation.commission + reservation.net_conducteur == reservation.prix
 
 
 def test_litige_tranche_pour_le_passager_le_rembourse(client_admin, litige, passager):

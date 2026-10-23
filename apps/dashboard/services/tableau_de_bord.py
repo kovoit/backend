@@ -43,6 +43,7 @@ def tableau_de_bord(periode: str) -> dict:
             "trajets_termines": sum(trajets.values()),
             "passagers_transportes": sum(passagers.values()),
             "economies_realisees": transaction_repository.total_credits(depuis=debut),
+            "commissions_kovoit": transaction_repository.total_commissions(depuis=debut),
             "utilisateurs_verifies": dossier_repository.compter_utilisateurs_verifies(),
             "conducteurs_verifies": dossier_repository.compter_verifies(TypeDossier.CONDUCTEUR),
         },

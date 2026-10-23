@@ -39,7 +39,9 @@ def test_acces_refuse_renvoie_403_failed(client_utilisateur):
 
 
 def test_donnees_invalides_renvoie_le_detail_par_champ(client_admin):
-    reponse = client_admin.patch("/api/v1/admin/parametres/prix_simulation/", {}, format="json")
+    reponse = client_admin.patch(
+        "/api/v1/admin/parametres/prix_carburant_litre/", {}, format="json"
+    )
 
     assert reponse.status_code == status.HTTP_400_BAD_REQUEST
     verifier_enveloppe(reponse.json(), "failed")
@@ -126,7 +128,7 @@ def test_jeton_invalide_renvoie_un_message_en_francais(api_client):
 def test_json_malforme_renvoie_un_message_lisible(client_admin):
     reponse = client_admin.generic(
         "PATCH",
-        "/api/v1/admin/parametres/prix_simulation/",
+        "/api/v1/admin/parametres/prix_carburant_litre/",
         "{pas du json",
         content_type="application/json",
     )
