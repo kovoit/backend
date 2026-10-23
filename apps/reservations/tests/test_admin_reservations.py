@@ -104,3 +104,20 @@ def test_detail_introuvable(client_admin):
 def test_reserve_aux_admins(client_utilisateur, reservation):
     assert client_utilisateur.get(URL).status_code == 403
     assert client_utilisateur.get(f"{URL}{reservation.id}/").status_code == 403
+
+
+def test_verrou_du_trajet_avant_celui_de_la_reservation(reservation):
+    """Même ordre partout (trajet puis réservation) : pas d'interblocage entre une annulation
+    du passager et l'annulation du trajet entier par le conducteur."""
+    from django.db import connection, transaction
+    from django.test.utils import CaptureQueriesContext
+
+    from apps.reservations.repository import reservation_repository
+
+    with transaction.atomic(), CaptureQueriesContext(connection) as requetes:
+        reservation_repository.get_verrouillee(reservation.id)
+
+    verrous = [q["sql"] for q in requetes if "FOR UPDATE" in q["sql"]]
+    assert len(verrous) == 2
+    assert '"trajets_trajet"' in verrous[0].split("FROM")[1]
+    assert '"reservations_reservation"' in verrous[1].split("FROM")[1]

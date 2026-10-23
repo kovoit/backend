@@ -6,6 +6,7 @@ from django.db.models.functions import TruncDate
 from apps.core.repository import BaseRepository
 from apps.reservations.models import STATUTS_ACTIFS, Reservation, StatutReservation
 from apps.reservations.transitions import HORODATAGES
+from apps.trajets.models import Trajet
 
 STATUTS_TRANSPORTES = [
     StatutReservation.TERMINEE,
@@ -26,7 +27,11 @@ class ReservationRepository(BaseRepository[Reservation]):
         )
 
     def get_verrouillee(self, reservation_id) -> Reservation:
-        """Verrou sur la seule ligne de la réservation. À appeler dans un `transaction.atomic()`."""
+        """Verrouille le trajet PUIS la réservation (à appeler dans un `transaction.atomic()`).
+        Toujours cet ordre, comme les actions sur le trajet entier : pas d'interblocage."""
+        trajet_id = self.filter(pk=reservation_id).values_list("trajet_id", flat=True).first()
+        if trajet_id is not None:
+            list(Trajet.objects.select_for_update().filter(pk=trajet_id).values_list("pk"))
         return self._get(self.model.objects.select_for_update(), pk=reservation_id)
 
     def changer_statut(self, reservation: Reservation, statut: str, maintenant, **champs):
