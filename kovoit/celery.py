@@ -14,6 +14,10 @@ app.conf.beat_schedule = {
         "task": "apps.core.tasks.battement_supervision",
         "schedule": 5 * 60,
     },
+    "conservation-des-notifications": {
+        "task": "apps.notifications.tasks.purger_notifications_anciennes",
+        "schedule": 24 * 60 * 60,
+    },
     "alerte-retraits-en-attente": {
         "task": "apps.portefeuille.tasks.alerter_retraits_en_attente",
         "schedule": 24 * 60 * 60,

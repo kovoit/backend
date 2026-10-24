@@ -48,3 +48,20 @@ def test_chacun_ne_voit_que_ses_notifications(client_de, utilisateur, admin):
     assert autre.get(URL).json()["reponse"]["results"] == []
     identifiant = client_de(admin).get(URL).json()["reponse"]["results"][0]["id"]
     assert autre.post(f"{URL}{identifiant}/lue/").status_code == 404
+
+
+def test_notifications_anciennes_supprimees(utilisateur):
+    from datetime import timedelta
+
+    from django.utils import timezone
+    from freezegun import freeze_time
+
+    from apps.notifications.models import Notification
+    from apps.notifications.tasks import purger_notifications_anciennes
+
+    with freeze_time(timezone.now() - timedelta(days=91)):
+        services.notifier(utilisateur, "Ancienne", "Message")
+    services.notifier(utilisateur, "Récente", "Message")
+
+    assert purger_notifications_anciennes() == 1
+    assert list(Notification.objects.values_list("titre", flat=True)) == ["Récente"]

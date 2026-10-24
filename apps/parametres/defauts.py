@@ -18,7 +18,7 @@ GROUPES = {
     "reservation": "Réservation, annulation et clôture",
     "fiabilite": "Fiabilité et suspension",
     "otp": "Connexion par code (OTP)",
-    "audit": "Journal d'audit",
+    "audit": "Conservation des données",
 }
 
 
@@ -127,5 +127,13 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
         "audit",
         "jours",
         30,
+    ),
+    "conservation_notifications_j": Defaut(
+        90,
+        ENTIER,
+        "Durée de conservation des notifications de l'application (jours).",
+        "audit",
+        "jours",
+        7,
     ),
 }

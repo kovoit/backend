@@ -26,3 +26,17 @@ def envoyer_push_tache(
     if atteints == 0:
         send_mail(f"Kovoit — {titre}", message, None, [email_secours])
     return atteints
+
+
+@shared_task
+def purger_notifications_anciennes() -> int:
+    """Tâche quotidienne : supprime les notifications plus vieilles que la durée de conservation."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.notifications.repository import notification_repository
+    from apps.parametres.services import get_param
+
+    limite = timezone.now() - timedelta(days=get_param("conservation_notifications_j"))
+    return notification_repository.supprimer_anterieures(limite)
