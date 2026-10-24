@@ -25,6 +25,10 @@ def demander_place(
 ) -> Reservation:
     """Demande une place : le montant est bloqué sur le portefeuille (complément éventuel payé
     par Flooz ou Mixx). La place n'est retenue qu'à l'acceptation du conducteur."""
+    # Appel externe (OSRM, jusqu'à 5 s) AVANT le verrou du trajet : les autres demandes sur ce
+    # trajet n'attendent pas le service de routage.
+    point = point_repository.get_du_trajet(trajet_repository.get_by_id(trajet_id), point_id)
+    distance = distance_route_km((point.lat, point.lng), (arrivee_lat, arrivee_lng))
     with transaction.atomic():
         trajet = trajet_repository.get_verrouille(trajet_id)
         if trajet.conducteur_id == passager.id:
@@ -35,7 +39,6 @@ def demander_place(
             raise Conflit("Ce trajet est déjà parti.", code="TRAJET_INDISPONIBLE")
         if reservation_repository.active_existe(trajet, passager):
             raise Conflit("Vous avez déjà une réservation sur ce trajet.", code="DEJA_RESERVE")
-        point = point_repository.get_du_trajet(trajet, point_id)
         taux = (trajet.tarification.get("parametres") or {}).get("taux_commission_pct", "0")
 
         reservation = reservation_repository.create(
@@ -45,7 +48,7 @@ def demander_place(
             arrivee_lat=arrivee_lat,
             arrivee_lng=arrivee_lng,
             arrivee_libelle=arrivee_libelle,
-            distance_km=distance_route_km((point.lat, point.lng), (arrivee_lat, arrivee_lng)),
+            distance_km=distance,
             prix=trajet.prix_place,
             # Taux figé à la publication (absent des trajets publiés avant la tarification : 0)
             taux_commission_pct=taux,
