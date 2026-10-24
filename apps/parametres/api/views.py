@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework.permissions import IsAdminUser
 from rest_framework.views import APIView
 
+from apps.accounts.api.permissions import ADMIN, ADMIN_PARAMETRES
 from apps.core.api.reponses import succes
 from apps.parametres import services
 from apps.parametres.api.serializers import ModificationParametreSerializer, ParametreSerializer
@@ -10,7 +10,7 @@ TAG = "admin - paramètres"
 
 
 class ParametreListeVue(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = ADMIN
 
     @extend_schema(
         tags=[TAG],
@@ -23,7 +23,7 @@ class ParametreListeVue(APIView):
 
 
 class ParametreDetailVue(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = ADMIN_PARAMETRES
 
     @extend_schema(
         tags=[TAG],

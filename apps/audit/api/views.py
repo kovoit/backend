@@ -4,7 +4,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN
+from apps.accounts.api.permissions import ADMIN_AUDIT
 from apps.audit import services
 from apps.audit.api.serializers import (
     EvenementSerializer,
@@ -28,7 +28,7 @@ def _valider(serializer_class, request) -> dict:
 
 
 class EvenementListeVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_AUDIT
 
     @extend_schema(
         tags=[TAG],
@@ -44,7 +44,7 @@ class EvenementListeVue(APIView):
 
 
 class EvenementDetailVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_AUDIT
 
     @extend_schema(tags=[TAG], summary="Détail d'un événement", responses=EvenementSerializer)
     def get(self, request, pk):
@@ -57,7 +57,7 @@ class FluxVue(APIView):
     depuis le dernier reçu. Les permissions sont vérifiées à chaque appel ; une coupure ne
     perd rien (reprise au dernier événement reçu, dédoublonnage par id côté client)."""
 
-    permission_classes = ADMIN
+    permission_classes = ADMIN_AUDIT
 
     @extend_schema(
         tags=[TAG],
@@ -74,7 +74,7 @@ class FluxVue(APIView):
 
 
 class StatistiquesVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_AUDIT
 
     @extend_schema(
         tags=[TAG],

@@ -123,6 +123,15 @@ class ModeSerializer(serializers.Serializer):
 
 
 class UtilisateurAdminSerializer(ProfilSerializer):
+    roles = serializers.SerializerMethodField(
+        help_text="moderation, finance, audit, parametres (tous si aucun rôle n'est attribué)"
+    )
+
     class Meta(ProfilSerializer.Meta):
-        fields = [*ProfilSerializer.Meta.fields, "is_staff", "cree_le", "last_login"]
+        fields = [*ProfilSerializer.Meta.fields, "is_staff", "roles", "cree_le", "last_login"]
         read_only_fields = fields
+
+    def get_roles(self, utilisateur) -> list[str]:
+        from apps.accounts.roles import roles_de
+
+        return sorted(roles_de(utilisateur))

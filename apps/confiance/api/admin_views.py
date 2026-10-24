@@ -1,7 +1,7 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN
+from apps.accounts.api.permissions import ADMIN_MODERATION
 from apps.confiance import services
 from apps.confiance.api.admin_serializers import (
     SignalementAdminDetailSerializer,
@@ -15,7 +15,7 @@ TAG = "admin - signalements"
 
 
 class SignalementAdminListeVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -31,7 +31,7 @@ class SignalementAdminListeVue(APIView):
 
 
 class SignalementAdminDetailVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -44,7 +44,7 @@ class SignalementAdminDetailVue(APIView):
 
 
 class SignalementTraiterVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],

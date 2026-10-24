@@ -2,7 +2,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN
+from apps.accounts.api.permissions import ADMIN_MODERATION
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 from apps.reservations import services
@@ -24,7 +24,7 @@ class FiltresReservationsSerializer(serializers.Serializer):
 
 
 class ReservationAdminListeVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -45,7 +45,7 @@ class ReservationAdminListeVue(APIView):
 
 
 class ReservationAdminDetailVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],

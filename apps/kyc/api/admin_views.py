@@ -3,7 +3,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN
+from apps.accounts.api.permissions import ADMIN_MODERATION
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 from apps.kyc import services
@@ -13,7 +13,7 @@ TAG = "admin - kyc"
 
 
 class DossierListeVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -38,7 +38,7 @@ class DossierListeVue(APIView):
 
 
 class DossierDetailVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(tags=[TAG], summary="Détail d'un dossier", responses=DossierAdminSerializer)
     def get(self, request, pk):
@@ -47,7 +47,7 @@ class DossierDetailVue(APIView):
 
 
 class DossierValiderVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG], summary="Valider un dossier", request=None, responses=DossierAdminSerializer
@@ -58,7 +58,7 @@ class DossierValiderVue(APIView):
 
 
 class DossierRejeterVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -74,7 +74,7 @@ class DossierRejeterVue(APIView):
 
 
 class PieceFichierVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],

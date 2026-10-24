@@ -1,7 +1,7 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.views import APIView
 
-from apps.accounts.api.permissions import ADMIN
+from apps.accounts.api.permissions import ADMIN_FINANCE
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 from apps.portefeuille import services
@@ -16,7 +16,7 @@ TAG = "admin - transactions"
 
 
 class TransactionAdminListeVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_FINANCE
 
     @extend_schema(
         tags=[TAG],
@@ -40,7 +40,7 @@ class TransactionAdminListeVue(APIView):
 
 
 class RetraitVerserVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_FINANCE
 
     @extend_schema(
         tags=[TAG],
@@ -57,7 +57,7 @@ class RetraitVerserVue(APIView):
 
 
 class RetraitRefuserVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_FINANCE
 
     @extend_schema(
         tags=[TAG],

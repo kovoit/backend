@@ -8,7 +8,7 @@ from apps.accounts.api.admin_serializers import (
     UtilisateurAdminDetailSerializer,
     UtilisateurAdminListeSerializer,
 )
-from apps.accounts.api.permissions import ADMIN
+from apps.accounts.api.permissions import ADMIN_MODERATION
 from apps.core.api.pagination import reponse_paginee
 from apps.core.api.reponses import succes
 
@@ -16,7 +16,7 @@ TAG = "admin - utilisateurs"
 
 
 class UtilisateurListeVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -37,7 +37,7 @@ class UtilisateurListeVue(APIView):
 
 
 class UtilisateurDetailVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -50,7 +50,7 @@ class UtilisateurDetailVue(APIView):
 
 
 class UtilisateurSuspendreVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
@@ -70,7 +70,7 @@ class UtilisateurSuspendreVue(APIView):
 
 
 class UtilisateurReactiverVue(APIView):
-    permission_classes = ADMIN
+    permission_classes = ADMIN_MODERATION
 
     @extend_schema(
         tags=[TAG],
