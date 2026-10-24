@@ -28,6 +28,8 @@ class Lieu(BaseModel):
     lat = models.FloatField()
     lng = models.FloatField()
     actif = models.BooleanField(default=True)
+    # Position contrôlée sur place ou sur une carte (vide : coordonnées approximatives)
+    verifie_le = models.DateTimeField("position vérifiée le", null=True, blank=True)
     # Libellé et quartier sans accents ni majuscules : « hedzra » trouve « Hédzranawoé »
     recherche = models.CharField(max_length=210, editable=False, db_index=True)
 
