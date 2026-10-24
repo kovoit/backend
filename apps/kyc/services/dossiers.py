@@ -11,6 +11,20 @@ from apps.vehicules.repository import vehicule_repository
 
 TAILLE_MAX_OCTETS = 5 * 1024 * 1024
 TYPES_MIME_ACCEPTES = {"image/jpeg", "image/png", "application/pdf"}
+# Signature réelle du fichier (premiers octets) → extension choisie par le serveur. Le type
+# annoncé par le téléphone et le nom du fichier ne sont pas crus.
+SIGNATURES = (
+    (b"\xff\xd8\xff", ".jpg"),
+    (b"\x89PNG\r\n\x1a\n", ".png"),
+    (b"%PDF-", ".pdf"),
+)
+
+
+def _extension_reelle(fichier) -> str | None:
+    debut = fichier.read(8)
+    fichier.seek(0)
+    return next((ext for signature, ext in SIGNATURES if debut.startswith(signature)), None)
+
 
 PIECES_OBLIGATOIRES = {
     TypeDossier.PASSAGER: {TypePiece.IDENTITE, TypePiece.SELFIE},
@@ -63,8 +77,10 @@ def ajouter_piece(utilisateur, type_dossier: str, type_piece: str, fichier) -> K
         raise DonneesInvalides(f"La pièce « {type_piece} » n'est pas demandée pour ce dossier.")
     if fichier.size > TAILLE_MAX_OCTETS:
         raise DonneesInvalides("Fichier trop volumineux (5 Mo maximum).")
-    if getattr(fichier, "content_type", None) not in TYPES_MIME_ACCEPTES:
-        raise DonneesInvalides("Format accepté : JPEG, PNG ou PDF.")
+    extension = _extension_reelle(fichier)
+    if getattr(fichier, "content_type", None) not in TYPES_MIME_ACCEPTES or extension is None:
+        raise DonneesInvalides("Format accepté : JPEG, PNG ou PDF.", code="FORMAT_PIECE_INVALIDE")
+    fichier.name = f"piece{extension}"  # le nom envoyé par le client n'est jamais conservé
 
     with transaction.atomic():
         dossier = dossier_repository.get_verrouille(utilisateur, type_dossier)

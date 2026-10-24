@@ -11,4 +11,4 @@ def verifier_kyc(utilisateur, type_dossier: str) -> KycDossier:
 
 
 def fichier_png(nom: str = "piece.png", taille: int = 100) -> SimpleUploadedFile:
-    return SimpleUploadedFile(nom, b"\x89PNG" + b"0" * taille, content_type="image/png")
+    return SimpleUploadedFile(nom, b"\x89PNG\r\n\x1a\n" + b"0" * taille, content_type="image/png")

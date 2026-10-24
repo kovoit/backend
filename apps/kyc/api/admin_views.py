@@ -87,4 +87,6 @@ class PieceFichierVue(APIView):
         # Donnée sensible : jamais conservée par le navigateur ni par un proxy
         reponse["Cache-Control"] = "no-store, private"
         reponse["X-Content-Type-Options"] = "nosniff"
+        # Même ouvert directement, le fichier ne peut exécuter aucun script
+        reponse["Content-Security-Policy"] = "sandbox; default-src 'none'"
         return reponse
