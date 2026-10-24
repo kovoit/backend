@@ -39,7 +39,9 @@ class FakePushSender(PushSender):
     def envoyer(self, jeton: str, titre: str, message: str, donnees: dict) -> bool:
         if jeton in self.jetons_invalides:
             return False
-        self.envoyes.append({"jeton": jeton, "titre": titre, "message": message})
+        self.envoyes.append(
+            {"jeton": jeton, "titre": titre, "message": message, "donnees": donnees}
+        )
         return True
 
 

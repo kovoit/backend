@@ -44,9 +44,20 @@ def libelle_trajet(reservation: Reservation) -> str:
     return f"{trajet.depart_libelle} → {trajet.arrivee_libelle} ({heure:%d/%m à %H:%M})"
 
 
+def _donnees_push(reservation: Reservation, destinataire: str) -> dict:
+    """Ce que l'app ouvre quand le push est touché : la réservation (passager) ou le trajet
+    publié (conducteur), quel que soit le mode affiché à ce moment-là."""
+    return {
+        "reservation_id": str(reservation.id),
+        "trajet_id": str(reservation.trajet_id),
+        "destinataire": destinataire,
+    }
+
+
 def notifier_passager(reservation: Reservation, titre: str, message: str) -> None:
-    notifier(reservation.passager, titre, message, {"reservation_id": str(reservation.id)})
+    notifier(reservation.passager, titre, message, _donnees_push(reservation, "passager"))
 
 
 def notifier_conducteur(reservation: Reservation, titre: str, message: str) -> None:
-    notifier(reservation.trajet.conducteur, titre, message, {"reservation_id": str(reservation.id)})
+    conducteur = reservation.trajet.conducteur
+    notifier(conducteur, titre, message, _donnees_push(reservation, "conducteur"))
