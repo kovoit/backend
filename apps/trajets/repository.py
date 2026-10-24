@@ -52,6 +52,12 @@ class TrajetRepository(BaseRepository[Trajet]):
             .order_by("-depart_le")
         )
 
+    def non_clos_de_conducteur(self, conducteur):
+        return self.filter(
+            conducteur=conducteur,
+            statut__in=[StatutTrajet.PUBLIE, StatutTrajet.COMPLET, StatutTrajet.EN_COURS],
+        )
+
     def non_clos_partis_avant(self, limite: datetime):
         """Trajets jamais terminés ni annulés par le conducteur, partis avant `limite`."""
         return self.filter(

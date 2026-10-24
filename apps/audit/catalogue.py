@@ -34,6 +34,9 @@ ACTIONS: dict[str, Action] = {
     "profil.changer_mode": Action("Changement de mode", C.METIER, "utilisateur"),
     "compte.suspendre": Action("Suspension de compte", C.ADMIN, "utilisateur"),
     "compte.reactiver": Action("Réactivation de compte", C.ADMIN, "utilisateur"),
+    "compte.supprimer": Action(
+        "Suppression du compte par l'utilisateur", C.SECURITE, "utilisateur"
+    ),
     # KYC (actions et statuts seulement, jamais le contenu des pièces)
     "kyc.deposer_piece": Action("Dépôt d'une pièce KYC", C.METIER, "dossier_kyc"),
     "kyc.soumettre": Action("Soumission d'un dossier KYC", C.METIER, "dossier_kyc"),
@@ -103,6 +106,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("otp-verifier", "POST"): "session.connecter",
     ("jeton-rafraichir", "POST"): "session.rafraichir",
     ("moi", "PATCH"): "profil.modifier",
+    ("moi-supprimer", "POST"): "compte.supprimer",
     ("moi-mode", "PATCH"): "profil.changer_mode",
     ("kyc-pieces", "POST"): "kyc.deposer_piece",
     ("kyc-soumettre", "POST"): "kyc.soumettre",

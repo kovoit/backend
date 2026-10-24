@@ -74,6 +74,14 @@ class PieceRepository(BaseRepository[KycPiece]):
     model = KycPiece
     message_introuvable = "Pièce KYC introuvable."
 
+    def supprimer_de(self, utilisateur) -> int:
+        """Supprime les fichiers et les pièces KYC d'un utilisateur (compte supprimé)."""
+        pieces = list(self.filter(dossier__utilisateur=utilisateur))
+        for piece in pieces:
+            piece.fichier.delete(save=False)
+            piece.delete()
+        return len(pieces)
+
     def types_presents(self, dossier: KycDossier) -> set[str]:
         return set(self.filter(dossier=dossier).values_list("type_piece", flat=True))
 

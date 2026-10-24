@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.accounts.api import views
+from apps.accounts.api import suppression, views
 
 urlpatterns = [
     path("auth/otp/demander/", views.OtpDemandeVue.as_view(), name="otp-demander"),
@@ -9,4 +9,5 @@ urlpatterns = [
     path("auth/deconnexion/", views.DeconnexionVue.as_view(), name="deconnexion"),
     path("moi/", views.MoiVue.as_view(), name="moi"),
     path("moi/mode/", views.MoiModeVue.as_view(), name="moi-mode"),
+    path("moi/supprimer/", suppression.SupprimerCompteVue.as_view(), name="moi-supprimer"),
 ]

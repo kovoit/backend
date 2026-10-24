@@ -15,6 +15,9 @@ class AppareilRepository(BaseRepository[AppareilNotification]):
         )
         return appareil
 
+    def supprimer_de(self, utilisateur) -> None:
+        self.filter(utilisateur=utilisateur).delete()
+
     def supprimer_jeton(self, jeton: str) -> None:
         self.filter(jeton=jeton).delete()
 
@@ -31,6 +34,12 @@ class NotificationRepository(BaseRepository[Notification]):
 
     def get_de(self, utilisateur, notification_id) -> Notification:
         return self._get(self.filter(utilisateur=utilisateur), pk=notification_id)
+
+    def supprimer_de(self, utilisateur) -> None:
+        self.filter(utilisateur=utilisateur).delete()
+
+    def supprimer_anterieures(self, limite) -> int:
+        return self.filter(cree_le__lt=limite).delete()[0]
 
     def marquer_toutes_lues(self, utilisateur, maintenant) -> int:
         return self.filter(utilisateur=utilisateur, lue_le__isnull=True).update(lue_le=maintenant)

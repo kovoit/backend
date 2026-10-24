@@ -88,6 +88,9 @@ class TransactionRepository(BaseRepository[Transaction]):
         a_verser = type_ == TypeTransaction.RETRAIT and statut == StatutTransaction.EN_ATTENTE
         return queryset.order_by("cree_le" if a_verser else "-cree_le")
 
+    def operations_en_attente(self, utilisateur):
+        return self.filter(utilisateur=utilisateur, statut=StatutTransaction.EN_ATTENTE)
+
     def historique(self, utilisateur):
         return self.filter(utilisateur=utilisateur).order_by("-cree_le")
 

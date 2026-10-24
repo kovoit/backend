@@ -55,6 +55,13 @@ class ReservationRepository(BaseRepository[Reservation]):
             trajet__depart_le__gt=maintenant,
         )
 
+    def engagements_non_clos(self, passager):
+        """Réservations du passager qui ne sont ni clôturées ni annulées, refusées, absentes."""
+        return self.filter(
+            passager=passager,
+            statut__in=[*STATUTS_ACTIFS, StatutReservation.TERMINEE, StatutReservation.LITIGE],
+        )
+
     def demandes_sans_reponse(self, maintenant: datetime):
         """Demandes jamais acceptées ni refusées alors que l'heure de départ est passée."""
         return self.filter(statut=StatutReservation.DEMANDEE, trajet__depart_le__lte=maintenant)

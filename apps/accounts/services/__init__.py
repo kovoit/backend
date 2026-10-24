@@ -27,6 +27,7 @@ from apps.accounts.services.profil import (
     lister_utilisateurs,
     modifier_profil,
 )
+from apps.accounts.services.suppression import SuppressionImpossible, supprimer_compte
 from apps.accounts.services.suspension import (
     DejaActif,
     DejaSuspendu,
@@ -37,6 +38,8 @@ from apps.accounts.services.suspension import (
 )
 
 __all__ = [
+    "SuppressionImpossible",
+    "supprimer_compte",
     "LienReinitialisationInvalide",
     "demander_reinitialisation",
     "reinitialiser",

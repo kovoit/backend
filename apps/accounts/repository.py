@@ -53,6 +53,23 @@ class UserRepository(BaseRepository[User]):
         for jeton in OutstandingToken.objects.filter(user=utilisateur):
             BlacklistedToken.objects.get_or_create(token=jeton)
 
+    def anonymiser(self, utilisateur: User, email: str) -> User:
+        """Compte supprimé : plus aucune donnée d'identité ni moyen de connexion."""
+        if utilisateur.photo:
+            utilisateur.photo.delete(save=False)
+        for vehicule in utilisateur.vehicules.all():
+            if vehicule.photo:
+                vehicule.photo.delete(save=False)
+                vehicule.save(update_fields=["photo"])
+        utilisateur.email = email
+        utilisateur.nom, utilisateur.prenom = "Compte", "supprimé"
+        utilisateur.telephone = ""
+        utilisateur.is_active = False
+        utilisateur.email_verifie = False
+        utilisateur.set_unusable_password()
+        utilisateur.save()
+        return utilisateur
+
     def groupes_parmi(self, utilisateur: User, noms) -> set[str]:
         return set(utilisateur.groups.filter(name__in=list(noms)).values_list("name", flat=True))
 
