@@ -12,20 +12,20 @@ PARAMETRES_TARIFICATION: dict[str, Defaut] = {
         817, ENTIER, "Prix du carburant (F CFA par litre).", "tarification", "F CFA/L", 1
     ),
     "consommation_voiture_l_100km": Defaut(
-        7.0,
+        8.0,
         DECIMAL,
         "Consommation de référence d'une voiture, si le véhicule n'a pas la sienne "
-        "(hypothèse à valider).",
+        "(valeur validée par Kovoit le 24/10/2026).",
         "tarification",
         "L/100 km",
         0.5,
         30,
     ),
     "consommation_moto_l_100km": Defaut(
-        2.5,
+        3.0,
         DECIMAL,
         "Consommation de référence d'une moto, si le véhicule n'a pas la sienne "
-        "(hypothèse à valider).",
+        "(valeur validée par Kovoit le 24/10/2026).",
         "tarification",
         "L/100 km",
         0.5,
