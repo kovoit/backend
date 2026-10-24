@@ -34,6 +34,9 @@ ACTIONS: dict[str, Action] = {
     "profil.changer_mode": Action("Changement de mode", C.METIER, "utilisateur"),
     "compte.suspendre": Action("Suspension de compte", C.ADMIN, "utilisateur"),
     "compte.reactiver": Action("Réactivation de compte", C.ADMIN, "utilisateur"),
+    "profil.accepter_cgu": Action(
+        "Acceptation des conditions d'utilisation", C.METIER, "utilisateur"
+    ),
     "compte.supprimer": Action(
         "Suppression du compte par l'utilisateur", C.SECURITE, "utilisateur"
     ),

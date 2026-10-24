@@ -38,6 +38,9 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     )
     suspendu_jusqu_au = models.DateTimeField("suspendu jusqu'au", null=True, blank=True)
     motif_suspension = models.TextField("motif de suspension", blank=True)
+    # Conditions d'utilisation acceptées (version et date) : voir apps/accounts/cgu.py
+    cgu_version = models.CharField("version des CGU acceptée", max_length=20, blank=True)
+    cgu_acceptees_le = models.DateTimeField("CGU acceptées le", null=True, blank=True)
     is_active = models.BooleanField("actif (Django)", default=True)
     is_staff = models.BooleanField("administrateur", default=False)
 

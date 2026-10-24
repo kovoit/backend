@@ -75,6 +75,10 @@ class EtatProfilSerializer(serializers.Serializer):
 class ProfilSerializer(serializers.ModelSerializer):
     kyc = serializers.SerializerMethodField()
     etat = serializers.SerializerMethodField()
+    cgu_acceptees = serializers.SerializerMethodField(
+        help_text="Faux : l'app demande d'accepter les CGU en vigueur avant tout autre écran"
+    )
+    cgu_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -90,10 +94,22 @@ class ProfilSerializer(serializers.ModelSerializer):
             "statut_compte",
             "suspendu_jusqu_au",
             "profil_complet",
+            "cgu_acceptees",
+            "cgu_url",
             "kyc",
             "etat",
         ]
         read_only_fields = fields
+
+    def get_cgu_acceptees(self, utilisateur) -> bool:
+        from apps.accounts.cgu import CGU_VERSION
+
+        return utilisateur.cgu_version == CGU_VERSION
+
+    def get_cgu_url(self, utilisateur) -> str:
+        from apps.accounts.cgu import CGU_URL
+
+        return CGU_URL
 
     @extend_schema_field(StatutsKycSerializer)
     def get_kyc(self, utilisateur: User) -> dict:
@@ -116,6 +132,9 @@ class ModificationProfilSerializer(serializers.Serializer):
     prenom = serializers.CharField(max_length=100, required=False)
     telephone = serializers.CharField(max_length=16, required=False, validators=[valider_telephone])
     photo = serializers.ImageField(required=False)
+    accepter_cgu = serializers.BooleanField(
+        required=False, default=False, help_text="Vrai : accepte les CGU en vigueur"
+    )
 
 
 class ModeSerializer(serializers.Serializer):

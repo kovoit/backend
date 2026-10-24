@@ -21,8 +21,19 @@ def est_suspendu(utilisateur: User) -> bool:
     return fin is None or fin > timezone.now()
 
 
-def modifier_profil(utilisateur: User, **champs) -> User:
+def modifier_profil(utilisateur: User, *, accepter_cgu: bool = False, **champs) -> User:
+    """`accepter_cgu` : l'utilisateur accepte les CGU en vigueur (case cochée dans l'app)."""
+    from apps.accounts.cgu import CGU_VERSION
+
     donnees = {cle: valeur for cle, valeur in champs.items() if cle in CHAMPS_MODIFIABLES}
+    if accepter_cgu and utilisateur.cgu_version != CGU_VERSION:
+        with transaction.atomic():
+            utilisateur = user_repository.update(
+                utilisateur, cgu_version=CGU_VERSION, cgu_acceptees_le=timezone.now()
+            )
+            journaliser(
+                "profil.accepter_cgu", ressource=utilisateur, details={"version": CGU_VERSION}
+            )
     if not donnees:
         return utilisateur
     with transaction.atomic():
