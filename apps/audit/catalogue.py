@@ -23,6 +23,12 @@ ACTIONS: dict[str, Action] = {
     "session.connecter": Action("Connexion", C.SECURITE, "utilisateur"),
     "session.deconnecter": Action("Déconnexion", C.SECURITE, "utilisateur"),
     "session.rafraichir": Action("Renouvellement de session", C.SECURITE, "utilisateur"),
+    "session.demander_reinitialisation": Action(
+        "Demande de réinitialisation du mot de passe", C.SECURITE, "utilisateur"
+    ),
+    "session.reinitialiser_mot_de_passe": Action(
+        "Mot de passe réinitialisé (sessions révoquées)", C.SECURITE, "utilisateur"
+    ),
     "otp.demander": Action("Demande de code de connexion", C.SECURITE),
     "profil.modifier": Action("Modification du profil", C.METIER, "utilisateur"),
     "profil.changer_mode": Action("Changement de mode", C.METIER, "utilisateur"),
@@ -83,6 +89,7 @@ ACTIONS: dict[str, Action] = {
 ROUTES: dict[tuple[str, str], str] = {
     ("admin-connexion", "POST"): "session.connecter",
     ("admin-jeton-rafraichir", "POST"): "session.rafraichir",
+    ("admin-mot-de-passe-reinitialiser", "POST"): "session.reinitialiser_mot_de_passe",
     ("parametres-detail", "PATCH"): "parametre.modifier",
     ("admin-utilisateur-suspendre", "POST"): "compte.suspendre",
     ("admin-utilisateur-reactiver", "POST"): "compte.reactiver",

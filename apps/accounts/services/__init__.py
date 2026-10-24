@@ -7,6 +7,11 @@ from apps.accounts.services.connexion_admin import (
     rafraichir_admin,
 )
 from apps.accounts.services.etat import etat_profil
+from apps.accounts.services.mot_de_passe import (
+    LienReinitialisationInvalide,
+    demander_reinitialisation,
+    reinitialiser,
+)
 from apps.accounts.services.otp import (
     CodeOtpInvalide,
     CompteDesactive,
@@ -32,6 +37,9 @@ from apps.accounts.services.suspension import (
 )
 
 __all__ = [
+    "LienReinitialisationInvalide",
+    "demander_reinitialisation",
+    "reinitialiser",
     "CodeOtpInvalide",
     "CompteDesactive",
     "CompteNonAdmin",

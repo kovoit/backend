@@ -38,6 +38,21 @@ class UserRepository(BaseRepository[User]):
     def suspensions_expirees(self, maintenant: datetime):
         return self.filter(statut_compte=StatutCompte.SUSPENDU, suspendu_jusqu_au__lte=maintenant)
 
+    def changer_mot_de_passe(self, utilisateur: User, mot_de_passe: str) -> User:
+        utilisateur.set_password(mot_de_passe)
+        utilisateur.save(update_fields=["password"])
+        return utilisateur
+
+    def revoquer_sessions(self, utilisateur: User) -> None:
+        """Met en liste noire tous les refresh tokens encore valides de l'utilisateur."""
+        from rest_framework_simplejwt.token_blacklist.models import (
+            BlacklistedToken,
+            OutstandingToken,
+        )
+
+        for jeton in OutstandingToken.objects.filter(user=utilisateur):
+            BlacklistedToken.objects.get_or_create(token=jeton)
+
     def compter(self, **filtres) -> int:
         return self.filter(**filtres).count()
 
