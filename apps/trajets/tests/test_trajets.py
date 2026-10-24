@@ -46,7 +46,9 @@ def test_publier_via_api(client_de, conducteur):
     )
 
     assert reponse.status_code == 201
-    assert reponse.json()["reponse"]["prix_place"] == 300
+    corps = reponse.json()["reponse"]
+    # Prix calculé par le serveur (au moins le plancher de test de 300 F), figé avec son calcul
+    assert corps["prix_place"] == corps["tarification"]["prix_place"] >= 300
 
 
 def test_publication_refusee_sans_kyc_conducteur(client_de, passager):

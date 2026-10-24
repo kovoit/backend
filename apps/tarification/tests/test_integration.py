@@ -21,8 +21,9 @@ ESTIMATION = "/api/v1/trajets/estimation/"
 
 @pytest.fixture(autouse=True)
 def prix_calcule(parametres_initialises_tarif):
-    """Ici, pas de plancher de test : le prix est celui de la formule (195 F pour le trajet de
-    test : ~10 km en voiture à 8 L/100 km, 3 places, carburant à 817 F/L, commission 15 %)."""
+    """Ici, pas de plancher de test : le prix est celui de la formule (275 F pour le trajet de
+    test : ~10 km et 24 min en voiture à 8 L/100 km, 3 places, carburant à 817 F/L, usure 15 F/km,
+    temps 300 F/h, commission 15 %)."""
 
 
 @pytest.fixture
@@ -45,13 +46,13 @@ def test_publication_fige_le_prix_calcule_et_son_instantane(conducteur):
     trajet = publier_trajet(conducteur)
 
     t = trajet.tarification
-    assert trajet.prix_place == t["prix_place"] == 195
+    assert trajet.prix_place == t["prix_place"] == 275
     assert trajet.duree_min == t["duree_min"] > 0
     assert Decimal(t["distance_km"]) == trajet.distance_km
     assert t["passagers_prevus"] == 3 and t["formule_version"] == "v1"
     assert t["parametres"]["prix_carburant_litre"] == "817"
     assert t["parametres"]["taux_commission_pct"] == "15"
-    assert (t["commission_place"], t["net_conducteur_place"]) == (29, 166)
+    assert (t["commission_place"], t["net_conducteur_place"]) == (41, 234)
     evenement = EvenementAudit.objects.get(action="trajet.publier")
     assert evenement.details["cout_total"] == t["cout_total"]
 
@@ -63,10 +64,10 @@ def test_un_parametre_modifie_ne_change_pas_un_prix_confirme(conducteur, passage
 
     reservation = demander(passager, trajet)
 
-    assert reservation.prix == 195
+    assert reservation.prix == 275
     assert reservation.taux_commission_pct == Decimal(15)  # taux de la publication
-    assert (reservation.commission, reservation.net_conducteur) == (29, 166)
-    assert publier_trajet(conducteur).prix_place > 195  # seuls les nouveaux trajets changent
+    assert (reservation.commission, reservation.net_conducteur) == (41, 234)
+    assert publier_trajet(conducteur).prix_place > 275  # seuls les nouveaux trajets changent
 
 
 def test_consommation_propre_au_vehicule(conducteur):
@@ -75,7 +76,7 @@ def test_consommation_propre_au_vehicule(conducteur):
     trajet = publier_trajet(conducteur)
 
     assert trajet.tarification["parametres"]["source_consommation"] == "vehicule"
-    assert trajet.prix_place > 195
+    assert trajet.prix_place > 275
 
 
 def test_moto_une_place(conducteur):
@@ -105,7 +106,7 @@ def test_estimation_avant_publication_sans_rien_enregistrer(client_de, conducteu
 
     assert reponse.status_code == 200
     devis = reponse.json()["reponse"]
-    assert devis["prix_place"] == 195
+    assert devis["prix_place"] == 275
     assert devis["commission_kovoit"] + devis["net_conducteur"] == devis["total_paye_passagers"]
     assert devis["cout_carburant"] and devis["part_conducteur"]
     assert not conducteur.trajets_conduits.exists()
@@ -135,7 +136,7 @@ def test_prix_envoye_par_l_application_ignore(client_de, conducteur, passager):
     )
 
     assert reponse.status_code == 201
-    assert reponse.json()["reponse"]["prix"] == 195
+    assert reponse.json()["reponse"]["prix"] == 275
 
 
 def test_itineraire_indisponible_estimation_signalee(settings, conducteur):
@@ -158,11 +159,11 @@ def test_commission_encaissee_au_versement_seulement(conducteur, passager):
     reservations.terminer_reservations_du_trajet(trajet)
     reservations.confirmer_arrivee(passager, reservation.id)
 
-    assert portefeuille.solde(passager).total == 5000 - 195
-    assert portefeuille.solde(conducteur).total == 166  # 195 − 29
-    assert list(commissions.values_list("montant", flat=True)) == [29]
+    assert portefeuille.solde(passager).total == 5000 - 275
+    assert portefeuille.solde(conducteur).total == 234  # 275 − 41
+    assert list(commissions.values_list("montant", flat=True)) == [41]
     evenement = EvenementAudit.objects.get(action="portefeuille.reverser")
-    assert evenement.details["commission"] + evenement.details["net_conducteur"] == 195
+    assert evenement.details["commission"] + evenement.details["net_conducteur"] == 275
 
 
 def test_annulation_rembourse_sans_commission(conducteur, passager):

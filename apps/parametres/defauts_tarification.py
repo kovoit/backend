@@ -1,8 +1,8 @@
 """Paramètres de la tarification des trajets (apps/tarification/calcul.py).
 
-Valeurs de départ : prix du carburant et commission fixés par Kovoit ; consommations de
-référence = hypothèses à valider ; temps et entretien à 0 tant qu'ils ne sont pas décidés
-(partage des seuls frais de carburant, PRD).
+Valeurs de départ validées par Kovoit le 24/10/2026 : carburant 817 F/L, commission 15 %,
+consommations de référence 8 L (voiture) et 3 L (moto) / 100 km, usure 15 F/km (voiture) et
+5 F/km (moto), temps du conducteur 300 F/h. Le prix couvre carburant, usure et temps.
 """
 
 from apps.parametres.types import DECIMAL, ENTIER, Defaut
@@ -41,21 +41,21 @@ PARAMETRES_TARIFICATION: dict[str, Defaut] = {
         10,
     ),
     "cout_horaire_conducteur": Defaut(
-        0,
+        300,
         ENTIER,
-        "Coût du temps du conducteur (F CFA/h). 0 : partage des seuls frais du véhicule.",
+        "Coût du temps du conducteur (F CFA/h). 0 : non compté.",
         "tarification",
         "F CFA/h",
     ),
     "entretien_voiture_par_km": Defaut(
-        0,
+        15,
         DECIMAL,
         "Entretien et usure d'une voiture (F CFA/km). 0 : non compté.",
         "tarification",
         "F CFA/km",
     ),
     "entretien_moto_par_km": Defaut(
-        0,
+        5,
         DECIMAL,
         "Entretien et usure d'une moto (F CFA/km). 0 : non compté.",
         "tarification",
