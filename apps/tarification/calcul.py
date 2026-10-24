@@ -157,6 +157,28 @@ def calculer(
     )
 
 
+def part_du_trajet(distance_passager_km: float, distance_trajet_km: float) -> Decimal:
+    """Part du trajet parcourue par le passager (0 à 1), au millième.
+
+    Rapport de distances à vol d'oiseau (point de prise en charge → arrivée du passager, départ
+    → arrivée du conducteur) : instantané et toujours identique, donc le prix affiché avant la
+    réservation est exactement celui qui est débité. Le prix de la place, lui, vient de la
+    distance par la route du trajet complet.
+    """
+    if distance_trajet_km <= 0:
+        return Decimal(1)
+    part = Decimal(str(distance_passager_km)) / Decimal(str(distance_trajet_km))
+    return min(max(part, Decimal(0)), Decimal(1)).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+
+
+def prix_passager(prix_place: int, part: Decimal, arrondi: int, minimum: int) -> int:
+    """Un passager qui ne fait qu'une partie du trajet paie selon sa propre distance (cahier des
+    charges) : prix de la place × part, arrondi au multiple supérieur, jamais plus que la place."""
+    if part >= 1:
+        return prix_place
+    return min(max(arrondi_superieur(Decimal(prix_place) * part, arrondi), minimum), prix_place)
+
+
 def participation_conducteur(devis: Devis, passagers: int) -> Decimal:
     """Ce que le trajet coûte réellement au conducteur avec `passagers` places payées.
 

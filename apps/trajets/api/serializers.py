@@ -60,14 +60,20 @@ class TrajetDetailSerializer(TrajetSerializer):
     Attend `context={"utilisateur": ...}`.
     """
 
+    prix_passager = serializers.SerializerMethodField(
+        help_text="Prix pour le point de prise en charge et l'arrivée demandés (sinon : la place)"
+    )
     paiement = serializers.SerializerMethodField()
 
     class Meta(TrajetSerializer.Meta):
-        fields = [*TrajetSerializer.Meta.fields, "paiement"]
+        fields = [*TrajetSerializer.Meta.fields, "prix_passager", "paiement"]
+
+    def get_prix_passager(self, trajet: Trajet) -> int:
+        return self.context.get("prix_passager") or trajet.prix_place
 
     @extend_schema_field(ApercuPaiementSerializer)
     def get_paiement(self, trajet: Trajet) -> dict:
-        return apercu_paiement(self.context["utilisateur"], trajet.prix_place)
+        return apercu_paiement(self.context["utilisateur"], self.get_prix_passager(trajet))
 
 
 class TrajetConducteurSerializer(TrajetSerializer):
@@ -128,6 +134,17 @@ class ResultatRechercheSerializer(serializers.Serializer):
     point_propose = PointSerializer()
     distance_marche_km = serializers.FloatField()
     ecart_minutes = serializers.IntegerField()
+    prix_passager = serializers.IntegerField(
+        help_text="Selon la distance du passager (point proposé → son arrivée) : prix débité"
+    )
+
+
+class PrixPassagerSerializer(serializers.Serializer):
+    """Facultatif : point de prise en charge et arrivée du passager, pour son propre prix."""
+
+    point_id = serializers.UUIDField(required=False)
+    arrivee_lat = serializers.FloatField(required=False, **LATITUDE)
+    arrivee_lng = serializers.FloatField(required=False, **LONGITUDE)
 
 
 class PositionSerializer(serializers.Serializer):

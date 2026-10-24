@@ -88,12 +88,21 @@ class TrajetDetailVue(APIView):
 
     @extend_schema(
         tags=[TAG],
-        summary="Détail d'un trajet + aperçu du paiement (portefeuille, complément Flooz/Mixx)",
+        summary="Détail d'un trajet + prix du passager et aperçu du paiement",
+        parameters=[s.PrixPassagerSerializer],
         responses=s.TrajetDetailSerializer,
     )
     def get(self, request, pk):
         trajet = services.get_trajet(pk)
-        donnees = s.TrajetDetailSerializer(trajet, context={"utilisateur": request.user}).data
+        entree = s.PrixPassagerSerializer(data=request.query_params)
+        entree.is_valid(raise_exception=True)
+        contexte = {"utilisateur": request.user}
+        d = entree.validated_data
+        if {"point_id", "arrivee_lat", "arrivee_lng"} <= d.keys():
+            contexte["prix_passager"] = services.prix_passager_pour(
+                trajet, d["point_id"], d["arrivee_lat"], d["arrivee_lng"]
+            )
+        donnees = s.TrajetDetailSerializer(trajet, context=contexte).data
         return succes("Trajet récupéré.", donnees)
 
 

@@ -15,6 +15,7 @@ CHAMPS_COMMUNS = [
     "arrivee_libelle",
     "distance_km",
     "prix",
+    "part_trajet",
     "frais_service",
     "montant_total",
     "moyen_paiement",

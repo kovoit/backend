@@ -6,13 +6,28 @@ administrables et l'itinéraire. Le prix est toujours calculé ici, jamais reçu
 
 from decimal import Decimal
 
+from apps.core.geo import distance_haversine_km
 from apps.parametres.services import get_param
 from apps.routage.providers import Point
 from apps.routage.services import itineraire
-from apps.tarification.calcul import Devis, Parametres, calculer, repartir_paiement
+from apps.tarification.calcul import (
+    Devis,
+    Parametres,
+    calculer,
+    part_du_trajet,
+    prix_passager,
+    repartir_paiement,
+)
 from apps.vehicules.models import TypeVehicule
 
-__all__ = ["Devis", "devis_trajet", "parametres_pour", "repartition", "repartir_paiement"]
+__all__ = [
+    "Devis",
+    "devis_trajet",
+    "parametres_pour",
+    "prix_pour",
+    "repartition",
+    "repartir_paiement",
+]
 
 
 def _decimal(cle: str) -> Decimal:
@@ -53,6 +68,27 @@ def devis_trajet(vehicule, depart: Point, arrivee: Point, places: int) -> Devis:
         parametres=parametres_pour(vehicule),
         source_itineraire=route.source,
     )
+
+
+def prix_pour(trajet, point, arrivee_lat: float, arrivee_lng: float) -> dict:
+    """Prix d'un passager selon sa propre distance : du point de prise en charge choisi à son
+    arrivée, rapportée au trajet du conducteur. Règles d'arrondi figées à la publication."""
+    parametres = (trajet.tarification or {}).get("parametres") or {}
+    if not parametres:  # trajet publié avant la tarification automatique : prix fixe
+        return {"prix": trajet.prix_place, "part_trajet": Decimal(1)}
+    part = part_du_trajet(
+        distance_haversine_km(point.lat, point.lng, arrivee_lat, arrivee_lng),
+        distance_haversine_km(
+            trajet.depart_lat, trajet.depart_lng, trajet.arrivee_lat, trajet.arrivee_lng
+        ),
+    )
+    prix = prix_passager(
+        trajet.prix_place,
+        part,
+        int(parametres.get("arrondi_prix_fcfa", 5)),
+        int(parametres.get("prix_minimum_place", 0)),
+    )
+    return {"prix": prix, "part_trajet": part}
 
 
 def repartition(prix: int, taux_commission_pct) -> dict:

@@ -32,6 +32,7 @@ class ReservationAdminSerializer(serializers.ModelSerializer):
             "taux_commission_pct",
             "commission",
             "net_conducteur",
+            "part_trajet",
             "statut",
             "cree_le",
         ]

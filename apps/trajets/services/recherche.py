@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.accounts.services import est_suspendu
 from apps.core.geo import distance_haversine_km
 from apps.parametres.services import get_param
+from apps.tarification.services import prix_pour
 from apps.trajets.models import PointPriseEnCharge, Trajet
 from apps.trajets.repository import trajet_repository
 
@@ -21,6 +22,8 @@ class ResultatRecherche:
     point_propose: PointPriseEnCharge
     distance_marche_km: float
     ecart_minutes: int
+    # Selon la distance du passager (point proposé → son arrivée) : celui qui sera débité
+    prix_passager: int
 
 
 def _boite(lat: float, lng: float, rayon_km: float) -> tuple[float, float, float, float]:
@@ -67,7 +70,8 @@ def rechercher(
         if marche > rayon_depart:
             continue
         ecart = abs((trajet.depart_le - date_heure).total_seconds()) // 60
-        resultats.append(ResultatRecherche(trajet, point, round(marche, 2), int(ecart)))
+        prix = prix_pour(trajet, point, arrivee_lat, arrivee_lng)["prix"]
+        resultats.append(ResultatRecherche(trajet, point, round(marche, 2), int(ecart), prix))
 
     # Heure de départ la plus proche d'abord, puis distance de marche la plus courte
     resultats.sort(key=lambda r: (r.ecart_minutes, r.distance_marche_km))

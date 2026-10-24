@@ -15,6 +15,16 @@ def get_trajet(trajet_id) -> Trajet:
     return trajet_repository.get_by_id(trajet_id)
 
 
+def prix_passager_pour(trajet: Trajet, point_id, arrivee_lat: float, arrivee_lng: float) -> int:
+    """Prix du passager pour ce point de prise en charge et cette arrivée (404 si le point
+    n'appartient pas au trajet). Même calcul qu'à la réservation."""
+    from apps.tarification.services import prix_pour
+    from apps.trajets.repository import point_repository
+
+    point = point_repository.get_du_trajet(trajet, point_id)
+    return prix_pour(trajet, point, arrivee_lat, arrivee_lng)["prix"]
+
+
 def get_trajet_du_conducteur(conducteur, trajet_id) -> Trajet:
     trajet = trajet_repository.get_by_id(trajet_id)
     if trajet.conducteur_id != conducteur.id:

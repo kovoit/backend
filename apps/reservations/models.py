@@ -39,6 +39,8 @@ class Reservation(BaseModel):
     arrivee_libelle = models.CharField(max_length=255, blank=True)
     distance_km = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     prix = models.PositiveIntegerField("prix (F CFA)")
+    # Part du trajet parcourue (1 = trajet complet) : le passager paie selon sa propre distance
+    part_trajet = models.DecimalField("part du trajet", max_digits=4, decimal_places=3, default=1)
     # Ancien modèle (frais payés par le passager) : 0 depuis la commission à la charge du conducteur
     frais_service = models.PositiveIntegerField("frais de service (F CFA)", default=0)
     # Figés à la demande, au taux de la publication : commission + net_conducteur == prix
