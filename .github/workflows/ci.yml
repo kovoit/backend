@@ -90,7 +90,7 @@ jobs:
         env:
           DJANGO_DEBUG: "False"
           DJANGO_SECRET_KEY: ${{ github.run_id }}-cle-ci-suffisamment-longue-pour-le-controle-deploy-0123456789
-          DJANGO_ALLOWED_HOSTS: api.kovoit.tg
+          DJANGO_ALLOWED_HOSTS: api.kovoittg.com
         run: python manage.py check --deploy --fail-level WARNING
 
       - name: Schéma OpenAPI valide

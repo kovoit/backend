@@ -18,7 +18,7 @@ from apps.core.api.reponses import succes
 
 TAG = "admin - authentification"
 # Refresh en cookie httpOnly SameSite=Lax : l'admin et l'API doivent être sur le même site
-# (ex. admin.kovoit.tg et api.kovoit.tg ; localhost:5173 et :8000 en dev). Secure hors DEBUG.
+# (ex. admin.kovoittg.com et api.kovoittg.com ; localhost:5173 et :8000 en dev). Secure hors DEBUG.
 COOKIE_REFRESH = "kovoit_admin_refresh"
 CHEMIN_COOKIE = "/api/v1/auth/admin/"
 
