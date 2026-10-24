@@ -24,14 +24,10 @@ def test_avec_appareil_la_notification_part_en_push(client_utilisateur, utilisat
 
     services.notifier(utilisateur, "Bon trajet", "Prise en charge confirmée.")
 
-    assert FakePushSender.envoyes == [
-        {
-            "jeton": "fcm-123",
-            "titre": "Bon trajet",
-            "message": "Prise en charge confirmée.",
-            "donnees": {},
-        }
-    ]
+    (envoi,) = FakePushSender.envoyes
+    assert (envoi["jeton"], envoi["titre"]) == ("fcm-123", "Bon trajet")
+    assert envoi["message"] == "Prise en charge confirmée."
+    assert set(envoi["donnees"]) == {"notification_id"}  # notification conservée pour l'app
     assert mail.outbox == []
 
 

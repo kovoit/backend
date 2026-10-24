@@ -10,6 +10,25 @@ class Plateforme(models.TextChoices):
     WEB = "web", "Web"
 
 
+class Notification(BaseModel):
+    """Notification envoyée à un utilisateur, conservée pour l'écran « Notifications » de l'app
+    (le push peut ne jamais arriver : téléphone éteint, Firebase non configuré…)."""
+
+    utilisateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+    )
+    titre = models.CharField(max_length=120)
+    message = models.TextField()
+    # Ce que l'app ouvre quand on touche la notification (reservation_id, trajet_id, destinataire)
+    donnees = models.JSONField(default=dict, blank=True)
+    lue_le = models.DateTimeField(null=True, blank=True)
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "notification"
+        verbose_name_plural = "notifications"
+        indexes = [models.Index(fields=["utilisateur", "-cree_le"])]
+
+
 class AppareilNotification(BaseModel):
     """Téléphone d'un utilisateur, identifié par son jeton de notification push (FCM)."""
 

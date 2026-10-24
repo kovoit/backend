@@ -15,11 +15,15 @@ def test_push_conducteur_ouvre_son_trajet(conducteur, passager, trajet):
     reservation = demander(passager, trajet)
 
     envoi = next(e for e in FakePushSender.envoyes if e["jeton"] == "jeton-conducteur")
-    assert envoi["donnees"] == {
-        "reservation_id": str(reservation.id),
-        "trajet_id": str(trajet.id),
-        "destinataire": "conducteur",
-    }
+    assert (
+        envoi["donnees"].items()
+        >= {
+            "reservation_id": str(reservation.id),
+            "trajet_id": str(trajet.id),
+            "destinataire": "conducteur",
+        }.items()
+    )
+    assert envoi["donnees"]["notification_id"]
 
 
 def test_push_passager_ouvre_sa_reservation(conducteur, passager, reservation):

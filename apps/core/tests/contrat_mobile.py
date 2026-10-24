@@ -56,6 +56,8 @@ def test_export(client_de, passager, conducteur):
     _ecrire("trajet_reservations", c.get(f"/api/v1/trajets/{trajet.id}/reservations/"))
     _ecrire("mes_trajets", c.get("/api/v1/trajets/mes-trajets/"))
     _ecrire("partage", p.post(f"/api/v1/reservations/{resa['id']}/partage/"))
+    # La réservation a été acceptée : le passager a reçu une notification
+    _ecrire("notifications", p.get("/api/v1/notifications/"))
     _ecrire("economies", c.get("/api/v1/moi/economies/"))
     _ecrire("vehicules", c.get("/api/v1/vehicules/"))
     _ecrire("portefeuille", p.get("/api/v1/portefeuille/"))
