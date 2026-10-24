@@ -83,6 +83,33 @@ def terminer(conducteur, trajet_id) -> Trajet:
     return trajet_repository.get_by_id(trajet.id)
 
 
+def clore_trajet_abandonne(trajet_id) -> bool:
+    """Tâche planifiée : le conducteur n'a pas terminé son trajet. Les passagers montés passent
+    « terminée » (clôture et paiement du conducteur ensuite, comme d'habitude) ; un trajet sans
+    passager monté est annulé. Les places acceptées non résolues ont déjà expiré."""
+    from apps.reservations.services import terminer_reservations_du_trajet
+
+    with transaction.atomic():
+        trajet = trajet_repository.get_verrouille(trajet_id)
+        if trajet.statut not in STATUTS_OUVERTS | {StatutTrajet.EN_COURS}:
+            return False
+        transporte = trajet.statut == StatutTrajet.EN_COURS
+        try:
+            terminer_reservations_du_trajet(trajet)
+        except Conflit:
+            return False  # une place acceptée reste à résoudre : on réessaiera
+        statut = StatutTrajet.TERMINE if transporte else StatutTrajet.ANNULE
+        trajet_repository.update(trajet, statut=statut)
+        journaliser(
+            "trajet.terminer" if transporte else "trajet.annuler",
+            ressource=trajet,
+            systeme=True,
+            categorie="metier",
+            details={"cause": "non_clos_par_le_conducteur"},
+        )
+    return True
+
+
 def mettre_a_jour_position(conducteur, trajet_id, lat: float, lng: float) -> Trajet:
     trajet = get_trajet_du_conducteur(conducteur, trajet_id)
     if trajet.statut in {StatutTrajet.TERMINE, StatutTrajet.ANNULE}:

@@ -1,6 +1,7 @@
 from apps.trajets.services.gestion import (
     annuler,
     annuler_trajets_a_venir,
+    clore_trajet_abandonne,
     get_trajet,
     get_trajet_du_conducteur,
     lister_trajets,
@@ -18,6 +19,7 @@ __all__ = [
     "ResultatRecherche",
     "annuler",
     "annuler_trajets_a_venir",
+    "clore_trajet_abandonne",
     "get_trajet",
     "get_trajet_du_conducteur",
     "lister_trajets",

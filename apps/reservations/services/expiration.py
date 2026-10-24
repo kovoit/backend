@@ -3,6 +3,8 @@
 - Demande sans réponse du conducteur à l'heure du départ : refusée, montant débloqué.
 - Place acceptée sans code de départ ni absence `delai_resolution_h` après le départ :
   annulée sans incident pour personne, montant débloqué.
+- Trajet que le conducteur n'a jamais terminé, `delai_resolution_h` après le départ : clos
+  (passagers montés « terminée », donc clôture et paiement du conducteur ensuite).
 """
 
 from datetime import timedelta
@@ -76,4 +78,9 @@ def expirer_reservations() -> int:
         nombre += _expirer_demande(reservation.id)
     for reservation in reservation_repository.acceptees_non_resolues(limite):
         nombre += _expirer_acceptee(reservation.id)
+    from apps.trajets.repository import trajet_repository
+    from apps.trajets.services import clore_trajet_abandonne
+
+    for trajet in trajet_repository.non_clos_partis_avant(limite):
+        nombre += clore_trajet_abandonne(trajet.id)
     return nombre
