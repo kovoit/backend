@@ -22,7 +22,11 @@ def noter(auteur, reservation_id, note: int, commentaire: str = "") -> Note:
     from apps.reservations.services import get_reservation
 
     reservation = get_reservation(auteur, reservation_id)
-    if reservation.statut not in STATUTS_NOTABLES:
+    # Passager absent : seul le conducteur, qui l'a attendu, peut le noter
+    absent_note_par_conducteur = (
+        reservation.statut == S.ABSENT and auteur.id == reservation.trajet.conducteur_id
+    )
+    if reservation.statut not in STATUTS_NOTABLES and not absent_note_par_conducteur:
         raise Conflit("La note est possible après le trajet.", code="NOTE_PREMATUREE")
     try:
         with transaction.atomic():
