@@ -70,6 +70,9 @@ class UserRepository(BaseRepository[User]):
         utilisateur.save()
         return utilisateur
 
+    def admins_actifs(self):
+        return self.filter(is_staff=True, is_active=True)
+
     def groupes_parmi(self, utilisateur: User, noms) -> set[str]:
         return set(utilisateur.groups.filter(name__in=list(noms)).values_list("name", flat=True))
 

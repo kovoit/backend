@@ -172,6 +172,7 @@ _PAIEMENT = (
 PAIEMENT_PROVIDER = env("PAIEMENT_PROVIDER", default=f"apps.portefeuille.{_PAIEMENT}")
 
 from kovoit.reglages_email import *  # noqa: E402, F403 — email, lien du back-office
+from kovoit.reglages_supervision import SENTRY_DSN  # noqa: E402, F401 — Sentry si configuré
 
 if not DEBUG:  # sécurité : actif dès que DEBUG est désactivé (production)
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

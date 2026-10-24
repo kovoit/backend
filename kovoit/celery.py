@@ -10,6 +10,14 @@ app.autodiscover_tasks()
 
 # Tâches planifiées (celery beat)
 app.conf.beat_schedule = {
+    "battement-de-supervision": {
+        "task": "apps.core.tasks.battement_supervision",
+        "schedule": 5 * 60,
+    },
+    "alerte-retraits-en-attente": {
+        "task": "apps.portefeuille.tasks.alerter_retraits_en_attente",
+        "schedule": 24 * 60 * 60,
+    },
     "cloture-automatique-des-reservations": {
         "task": "apps.reservations.tasks.cloturer_reservations",
         "schedule": 15 * 60,

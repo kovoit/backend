@@ -14,6 +14,7 @@ firebase-admin~=6.9  # notifications push (FCM)
 # --- Serveur de production ---
 gunicorn~=23.0.0
 whitenoise~=6.9  # fichiers statiques du Django admin
+sentry-sdk[django,celery]~=2.19.2  # suivi des erreurs, actif si SENTRY_DSN est renseigné
 
 # --- Tests et qualité ---
 pytest~=9.1.1

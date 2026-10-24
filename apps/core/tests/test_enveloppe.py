@@ -13,12 +13,16 @@ def verifier_enveloppe(donnees: dict, statut: str) -> None:
     assert isinstance(donnees["message"], str) and donnees["message"]
 
 
+@pytest.mark.django_db
 def test_sante_renvoie_une_enveloppe_success(api_client):
+    from apps.core.supervision import battre
+
+    battre()  # celery beat actif
     reponse = api_client.get("/api/v1/sante/")
 
     assert reponse.status_code == status.HTTP_200_OK
     verifier_enveloppe(reponse.json(), "success")
-    assert reponse.json()["reponse"] == {"version": "1.0.0"}
+    assert reponse.json()["reponse"]["version"] == "1.0.0"
 
 
 @pytest.mark.django_db
