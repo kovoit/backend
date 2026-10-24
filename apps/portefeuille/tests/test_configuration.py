@@ -53,3 +53,28 @@ def test_reponse_paygate_inattendue(settings, monkeypatch):
     monkeypatch.setattr("urllib.request.urlopen", lambda requete, timeout: io.StringIO("[]"))
     with pytest.raises(PaiementIndisponible):
         paygate.PayGateProvider().verifier("id-1", "")
+
+
+def test_recharge_plafonnee(passager):
+    from apps.core.exceptions import DonneesInvalides
+    from apps.portefeuille import services
+
+    with pytest.raises(DonneesInvalides) as exc:
+        services.recharger(passager, 100_001, "flooz")
+    assert exc.value.code == "RECHARGE_TROP_ELEVEE"
+    assert services.recharger(passager, 100_000, "flooz").montant == 100_000
+
+
+def test_numero_refuse_par_l_operateur_message_clair(settings, monkeypatch, passager):
+    from apps.portefeuille import services
+    from apps.portefeuille.models import Transaction
+    from apps.portefeuille.provider import NumeroRefuseParOperateur
+
+    settings.PAIEMENT_PROVIDER = "apps.portefeuille.paygate.PayGateProvider"
+    monkeypatch.setattr("apps.portefeuille.paygate._appeler", lambda chemin, donnees: {"status": 4})
+    with pytest.raises(NumeroRefuseParOperateur) as exc:
+        services.recharger(passager, 1000, "mixx")
+
+    assert exc.value.http_status == 400
+    assert "Flooz (Moov) ou Mixx (Yas)" in exc.value.message
+    assert Transaction.objects.filter(type="recharge", statut="echouee").count() == 1

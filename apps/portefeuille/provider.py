@@ -21,6 +21,20 @@ class PaiementIndisponible(ErreurMetier):
     http_status = 503
 
 
+class NumeroRefuseParOperateur(PaiementIndisponible):
+    """Paramètres refusés par l'opérateur : le plus souvent un numéro d'un autre réseau.
+
+    Pas de contrôle préalable par préfixe : avec la portabilité des numéros au Togo, un
+    préfixe ne désigne plus sûrement Moov (Flooz) ou Yas (Mixx)."""
+
+    code = "NUMERO_REFUSE_PAR_OPERATEUR"
+    message = (
+        "Ce numéro n'a pas été accepté pour ce moyen de paiement. Vérifiez qu'il s'agit bien "
+        "d'un compte Flooz (Moov) ou Mixx (Yas), selon votre choix."
+    )
+    http_status = 400
+
+
 @dataclass(frozen=True)
 class Resultat:
     reference: str

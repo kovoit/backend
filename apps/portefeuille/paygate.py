@@ -20,7 +20,12 @@ import urllib.request
 from django.conf import settings
 
 from apps.portefeuille.models import StatutTransaction as S
-from apps.portefeuille.provider import PaiementIndisponible, PaiementProvider, Resultat
+from apps.portefeuille.provider import (
+    NumeroRefuseParOperateur,
+    PaiementIndisponible,
+    PaiementProvider,
+    Resultat,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +74,9 @@ class PayGateProvider(PaiementProvider):
         )
         statut = reponse.get("status")
         if statut != 0:
+            if statut == 4:  # paramètres invalides : numéro d'un autre réseau, le plus souvent
+                logger.warning("PayGate a refusé les paramètres de l'initiation")
+                raise NumeroRefuseParOperateur()
             code = CODES_INITIATION.get(statut, "REFUS_PAYGATE")
             logger.warning("PayGate a refusé l'initiation (%s)", code)
             raise PaiementIndisponible(code=code)

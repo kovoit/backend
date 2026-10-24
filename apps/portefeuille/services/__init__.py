@@ -10,8 +10,6 @@ from apps.portefeuille.services.commun import (
 from apps.portefeuille.services.mobile_money import (
     confirmer_par_callback,
     recharger,
-    retirer,
-    traiter_retrait,
     verifier_paiement,
     verifier_paiements_en_attente,
 )
@@ -22,6 +20,7 @@ from apps.portefeuille.services.reservation import (
     debloquer,
     rembourser,
 )
+from apps.portefeuille.services.retraits import retirer, traiter_retrait
 
 __all__ = [
     "Solde",

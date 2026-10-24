@@ -27,6 +27,14 @@ PARAMETRES_PAR_DEFAUT: dict[str, Defaut] = {
     "recharge_min": Defaut(
         500, ENTIER, "Montant minimum d'une recharge simulée (F CFA).", "prix", "F CFA"
     ),
+    "recharge_max": Defaut(
+        100_000,
+        ENTIER,
+        "Montant maximum d'une recharge (F CFA) : limite la fraude et les erreurs de saisie.",
+        "prix",
+        "F CFA",
+        500,
+    ),
     "retrait_min": Defaut(
         500, ENTIER, "Montant minimum d'un retrait simulé (F CFA).", "prix", "F CFA"
     ),
