@@ -1,21 +1,25 @@
-from django.contrib import admin, messages
+from django.contrib import admin
 
-from apps.core.exceptions import ErreurMetier
-from apps.portefeuille import services
+from apps.accounts.roles import FINANCE, roles_de
 from apps.portefeuille.models import Transaction
 
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    """Consultation du journal ; seuls les retraits en attente se traitent (versement manuel
-    tant que le versement automatique PayGate n'est pas branché). Tout passe par le service,
-    donc par le journal d'audit."""
+    """Consultation seule du journal, réservée au rôle Finance (et aux superutilisateurs).
+    Le versement et le refus des retraits se font dans le back-office React, écrits au
+    journal d'audit (D-38)."""
 
     list_display = ["cree_le", "utilisateur", "type", "montant", "statut", "moyen_paiement",
                     "telephone", "reference_externe", "reference_operateur"]  # fmt: skip
     list_filter = ["type", "statut", "moyen_paiement"]
     search_fields = ["utilisateur__email", "reference_externe", "reference_operateur", "telephone"]
-    actions = ["marquer_verse", "refuser_retrait"]
+
+    def has_module_permission(self, request):
+        return FINANCE in roles_de(request.user) and super().has_module_permission(request)
+
+    def has_view_permission(self, request, obj=None):
+        return FINANCE in roles_de(request.user) and super().has_view_permission(request, obj)
 
     def has_add_permission(self, request):
         return False
@@ -25,18 +29,3 @@ class TransactionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-
-    def _traiter(self, request, queryset, verse: bool):
-        for ligne in queryset:
-            try:
-                services.traiter_retrait(request.user, ligne.id, verse=verse)
-            except ErreurMetier as erreur:
-                self.message_user(request, f"{ligne} : {erreur.message}", messages.WARNING)
-
-    @admin.action(description="Retrait versé sur Flooz / Mixx")
-    def marquer_verse(self, request, queryset):
-        self._traiter(request, queryset, verse=True)
-
-    @admin.action(description="Refuser le retrait (le montant redevient disponible)")
-    def refuser_retrait(self, request, queryset):
-        self._traiter(request, queryset, verse=False)
