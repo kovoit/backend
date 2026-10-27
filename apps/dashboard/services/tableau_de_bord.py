@@ -51,6 +51,7 @@ def tableau_de_bord(periode: str) -> dict:
             "kyc_en_attente": dossier_repository.compter(statut=StatutKyc.EN_ATTENTE),
             "signalements_ouverts": signalement_repository.compter(statut=StatutSignalement.OUVERT),
             "litiges": reservation_repository.compter(statut=StatutReservation.LITIGE),
+            "retraits_en_attente": transaction_repository.compter_retraits_en_attente(),
         },
         "evolution": [
             {"date": jour, "trajets": trajets.get(jour, 0), "passagers": passagers.get(jour, 0)}

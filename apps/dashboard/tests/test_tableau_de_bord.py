@@ -8,6 +8,8 @@ from apps.accounts.tests.factories import UserFactory
 from apps.confiance.services import signaler
 from apps.dashboard.services import bornes
 from apps.kyc.models import KycDossier, StatutKyc
+from apps.portefeuille import services as portefeuille
+from apps.portefeuille.models import StatutTransaction, Transaction, TypeTransaction
 from apps.reservations import services as reservations
 from apps.reservations.code_depart import calculer_code
 from apps.reservations.models import StatutReservation
@@ -91,7 +93,34 @@ def test_files_de_travail(client_admin, conducteur, passager):
 
     corps = client_admin.get(URL, {"periode": "mois"}).json()["reponse"]
 
-    assert corps["a_traiter"] == {"kyc_en_attente": 1, "signalements_ouverts": 1, "litiges": 1}
+    assert corps["a_traiter"] == {
+        "kyc_en_attente": 1,
+        "signalements_ouverts": 1,
+        "litiges": 1,
+        "retraits_en_attente": 0,
+    }
+
+
+def test_retraits_en_attente_seulement(client_admin_sans_role, admin_sans_role, passager, settings):
+    """Retraits à verser (D-55) : ni les retraits déjà versés ou refusés, ni les recharges en
+    attente."""
+    portefeuille.retirer(passager, 1000, "flooz")  # simulation : validee tout de suite
+    settings.PAIEMENT_PROVIDER = "apps.portefeuille.paygate.PayGateProvider"
+    settings.PAYGATE_CALLBACK_SECRET = "cle-callback"
+    a_refuser = portefeuille.retirer(passager, 500, "flooz")
+    portefeuille.retirer(passager, 500, "mixx")
+    Transaction.objects.create(
+        utilisateur=passager, type=TypeTransaction.RECHARGE, montant=2000,
+        statut=StatutTransaction.EN_ATTENTE,
+    )  # fmt: skip
+
+    reponse = client_admin_sans_role.get(URL)
+
+    assert reponse.status_code == 200
+    assert reponse.json()["reponse"]["a_traiter"]["retraits_en_attente"] == 2
+    portefeuille.traiter_retrait(admin_sans_role, a_refuser.id, verse=False, motif="Numéro faux")
+    reponse = client_admin_sans_role.get(URL)
+    assert reponse.json()["reponse"]["a_traiter"]["retraits_en_attente"] == 1
 
 
 def test_signale_les_donnees_de_demo(client_admin):

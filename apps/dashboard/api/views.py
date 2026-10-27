@@ -80,6 +80,9 @@ class ATraiterSerializer(serializers.Serializer):
     kyc_en_attente = serializers.IntegerField()
     signalements_ouverts = serializers.IntegerField()
     litiges = serializers.IntegerField()
+    retraits_en_attente = serializers.IntegerField(
+        help_text="Retraits à verser (statut en_attente), sans limite de période"
+    )
 
 
 class JourSerializer(serializers.Serializer):
@@ -106,6 +109,9 @@ class TableauDeBordVue(APIView):
     @extend_schema(
         tags=["admin - indicateurs"],
         summary="Tableau de bord : indicateurs de la période, files de travail, évolution",
+        description="Visible par tout administrateur, même sans rôle. `a_traiter` compte les "
+        "éléments en attente à ce jour (KYC, signalements ouverts, litiges, retraits à verser), "
+        "indépendamment de la période.",
         parameters=[PeriodeEntreeSerializer],
         responses=TableauDeBordSerializer,
     )

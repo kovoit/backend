@@ -37,7 +37,8 @@ def _role(nom: str) -> type[BasePermission]:
 CONNECTE = [IsAuthenticated, EmailVerifie]
 # Tout administrateur (tableau de bord, consultation des paramètres, son profil)
 ADMIN = [IsAuthenticated, IsAdminUser]
-# Par domaine (voir apps/accounts/roles.py) : un admin sans rôle garde l'accès à tout
+# Par domaine (voir apps/accounts/roles.py) : un admin sans rôle n'a que ADMIN
+# (tableau de bord, lecture des paramètres)
 ADMIN_MODERATION = [*ADMIN, _role(roles.MODERATION)]
 ADMIN_FINANCE = [*ADMIN, _role(roles.FINANCE)]
 ADMIN_AUDIT = [*ADMIN, _role(roles.AUDIT)]

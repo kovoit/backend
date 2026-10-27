@@ -41,7 +41,7 @@ class Command(BaseCommand):
             raise CommandError("seed_backoffice est réservé au développement (DEBUG=True).")
         if user_repository.exists(email__endswith=f"@{personnes.DOMAINE}"):
             raise CommandError("Données de démo déjà présentes. Repartir de zéro : manage.py flush")
-        admin = user_repository.filter(is_staff=True).first()
+        admin = user_repository.filter(is_staff=True).order_by("-is_superuser").first()
         if admin is None:
             raise CommandError("Créez d'abord un administrateur : manage.py createsuperuser")
 

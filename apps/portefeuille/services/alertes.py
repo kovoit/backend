@@ -11,7 +11,8 @@ ATTENTE_MAX = timedelta(hours=24)
 
 
 def alerter_retraits_en_attente() -> int:
-    """Email aux admins Finance (rôle finance, ou admin sans rôle). Renvoie le nombre."""
+    """Email aux admins actifs ayant le rôle finance (superutilisateurs compris).
+    Renvoie le nombre."""
     from apps.accounts.repository import user_repository
     from apps.accounts.roles import FINANCE, roles_de
     from apps.notifications.services import envoyer_email

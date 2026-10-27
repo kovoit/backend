@@ -143,7 +143,8 @@ class ModeSerializer(serializers.Serializer):
 
 class UtilisateurAdminSerializer(ProfilSerializer):
     roles = serializers.SerializerMethodField(
-        help_text="moderation, finance, audit, parametres (tous si aucun rôle n'est attribué)"
+        help_text="Rôles effectifs : moderation, finance, audit, parametres. Liste vide pour un "
+        "admin sans rôle ; les quatre pour un superutilisateur."
     )
 
     class Meta(ProfilSerializer.Meta):

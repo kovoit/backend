@@ -93,6 +93,10 @@ class TransactionRepository(BaseRepository[Transaction]):
             type=TypeTransaction.RETRAIT, statut=StatutTransaction.EN_ATTENTE, cree_le__lt=limite
         )
 
+    def compter_retraits_en_attente(self) -> int:
+        """Retraits à verser (montant déjà retenu, versement manuel à faire)."""
+        return self.compter(type=TypeTransaction.RETRAIT, statut=StatutTransaction.EN_ATTENTE)
+
     def operations_en_attente(self, utilisateur):
         return self.filter(utilisateur=utilisateur, statut=StatutTransaction.EN_ATTENTE)
 

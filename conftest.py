@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from apps.accounts.tests.factories import UserFactory
+from apps.accounts.tests.factories import AdminFactory, UserFactory
 from apps.kyc.tests.factories import verifier_kyc
 from apps.notifications.push import FakePushSender
 from apps.portefeuille import services as portefeuille
@@ -76,7 +76,20 @@ def utilisateur(db):
 
 @pytest.fixture
 def admin(db):
-    return UserFactory(is_staff=True, prenom="Admin")
+    """Admin doté des quatre rôles (moderation, finance, audit, parametres)."""
+    return AdminFactory()
+
+
+@pytest.fixture
+def admin_sans_role(db):
+    """Admin sans aucun rôle : tableau de bord et consultation des paramètres seulement."""
+    return AdminFactory(roles=[], prenom="Ama")
+
+
+@pytest.fixture
+def superutilisateur(db):
+    """Superutilisateur sans groupe : tous les rôles."""
+    return AdminFactory(is_superuser=True, roles=[], prenom="Super")
 
 
 @pytest.fixture
@@ -87,6 +100,11 @@ def client_utilisateur(client_de, utilisateur):
 @pytest.fixture
 def client_admin(client_de, admin):
     return client_de(admin)
+
+
+@pytest.fixture
+def client_admin_sans_role(client_de, admin_sans_role):
+    return client_de(admin_sans_role)
 
 
 @pytest.fixture
