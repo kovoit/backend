@@ -1,14 +1,8 @@
-"""Indicateurs : économies du conducteur et tableau de bord administrateur."""
+"""Économies du conducteur (le tableau de bord administrateur est dans tableau_de_bord.py)."""
 
 from django.utils import timezone
 
-from apps.accounts.repository import user_repository
-from apps.kyc.models import TypeDossier
-from apps.kyc.repository import dossier_repository
 from apps.portefeuille.repository import transaction_repository
-from apps.reservations.repository import reservation_repository
-from apps.trajets.models import StatutTrajet
-from apps.trajets.repository import trajet_repository
 
 
 def _debut_du_mois():
@@ -31,16 +25,4 @@ def economies_conducteur(conducteur) -> dict:
         "mois_en_cours": transaction_repository.total_credits(conducteur, _debut_du_mois()),
         "total": transaction_repository.total_credits(conducteur),
         "par_trajet": par_trajet,
-    }
-
-
-def indicateurs() -> dict:
-    return {
-        "utilisateurs": user_repository.compter(),
-        "passagers_verifies": dossier_repository.compter_verifies(TypeDossier.PASSAGER),
-        "conducteurs_verifies": dossier_repository.compter_verifies(TypeDossier.CONDUCTEUR),
-        "trajets_publies": trajet_repository.compter(),
-        "trajets_termines": trajet_repository.compter(statut=StatutTrajet.TERMINE),
-        "passagers_transportes": reservation_repository.compter_transportes(),
-        "economies_realisees": transaction_repository.total_credits(),
     }

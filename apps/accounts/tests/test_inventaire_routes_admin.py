@@ -12,11 +12,9 @@ from apps.accounts.api.permissions import ADMIN
 from apps.accounts.tests.routes_admin import protegee_par_un_role, routes_sous_admin
 
 # Tout administrateur, même sans rôle : profil, tableau de bord, consultation des paramètres.
-# indicateurs/ : ancienne vue du tableau de bord, supprimée en T5.
 TOUT_ADMIN = [
     ("get", "api/v1/auth/admin/moi/"),
     ("get", "api/v1/admin/tableau-de-bord/"),
-    ("get", "api/v1/admin/indicateurs/"),
     ("get", "api/v1/admin/parametres/"),
 ]
 # Connexion au back-office : publiques par nature (le service vérifie identifiants et is_staff)

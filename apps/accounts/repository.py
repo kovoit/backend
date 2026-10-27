@@ -76,9 +76,6 @@ class UserRepository(BaseRepository[User]):
     def groupes_parmi(self, utilisateur: User, noms) -> set[str]:
         return set(utilisateur.groups.filter(name__in=list(noms)).values_list("name", flat=True))
 
-    def compter(self, **filtres) -> int:
-        return self.filter(**filtres).count()
-
 
 class OtpRepository(BaseRepository[OtpCode]):
     model = OtpCode

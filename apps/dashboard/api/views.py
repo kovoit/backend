@@ -21,16 +21,6 @@ class EconomiesSerializer(serializers.Serializer):
     par_trajet = EconomieTrajetSerializer(many=True)
 
 
-class IndicateursSerializer(serializers.Serializer):
-    utilisateurs = serializers.IntegerField()
-    passagers_verifies = serializers.IntegerField()
-    conducteurs_verifies = serializers.IntegerField()
-    trajets_publies = serializers.IntegerField()
-    trajets_termines = serializers.IntegerField()
-    passagers_transportes = serializers.IntegerField()
-    economies_realisees = serializers.IntegerField()
-
-
 class EconomiesVue(APIView):
     permission_classes = CONNECTE
 
@@ -42,16 +32,6 @@ class EconomiesVue(APIView):
     def get(self, request):
         economies = services.economies_conducteur(request.user)
         return succes("Économies calculées.", EconomiesSerializer(economies).data)
-
-
-class IndicateursVue(APIView):
-    permission_classes = ADMIN
-
-    @extend_schema(
-        tags=["admin - indicateurs"], summary="Indicateurs clés", responses=IndicateursSerializer
-    )
-    def get(self, request):
-        return succes("Indicateurs calculés.", IndicateursSerializer(services.indicateurs()).data)
 
 
 class PeriodeEntreeSerializer(serializers.Serializer):

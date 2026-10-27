@@ -124,9 +124,6 @@ class ReservationRepository(BaseRepository[Reservation]):
 
     # --- Indicateurs ---
 
-    def compter_transportes(self) -> int:
-        return self.filter(statut__in=STATUTS_TRANSPORTES).count()
-
     def transportes_par_jour(self, debut: datetime, fin: datetime) -> dict[date, int]:
         """Passagers transportés par jour de départ du trajet (heure de Lomé)."""
         lignes = (
