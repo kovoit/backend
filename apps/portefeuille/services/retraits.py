@@ -19,6 +19,7 @@ from apps.portefeuille.services.commun import (
     verrouiller,
 )
 from apps.portefeuille.services.mobile_money import _details, _telephone
+from apps.portefeuille.services.notifications import notifier_retrait
 
 
 def retirer(utilisateur, montant: int, moyen: str, telephone: str = "") -> Transaction:
@@ -46,6 +47,7 @@ def retirer(utilisateur, montant: int, moyen: str, telephone: str = "") -> Trans
             ressource=utilisateur,
             details={**_details(ligne), "statut": ligne.statut},
         )
+        notifier_retrait(ligne)  # versé tout de suite (versement automatique) ; rien si en attente
     return ligne
 
 
@@ -69,4 +71,5 @@ def traiter_retrait(
             resultat=R.SUCCES if verse else R.REFUS,
             details={**_details(ligne), **({"motif": motif} if motif else {})},
         )
+        notifier_retrait(ligne, motif)
     return ligne

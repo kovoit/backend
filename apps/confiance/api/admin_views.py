@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from apps.accounts.api.permissions import ADMIN_MODERATION
 from apps.confiance import services
 from apps.confiance.api.admin_serializers import (
+    CompteurSignalementsSerializer,
     SignalementAdminDetailSerializer,
     SignalementAdminSerializer,
     TraitementAdminSerializer,
@@ -28,6 +29,21 @@ class SignalementAdminListeVue(APIView):
         return reponse_paginee(
             request, signalements, SignalementAdminSerializer, "Signalements récupérés.", self
         )
+
+
+class SignalementCompteurVue(APIView):
+    """Badge du menu (D-07, D-28, D-41) : signalements ouverts, litiges compris une seule fois."""
+
+    permission_classes = ADMIN_MODERATION
+
+    @extend_schema(
+        tags=[TAG],
+        summary="Nombre de signalements ouverts (badge du menu, litiges compris)",
+        responses=CompteurSignalementsSerializer,
+    )
+    def get(self, request):
+        donnees = {"signalements_ouverts": services.compter_signalements_ouverts()}
+        return succes("Compteur récupéré.", CompteurSignalementsSerializer(donnees).data)
 
 
 class SignalementAdminDetailVue(APIView):

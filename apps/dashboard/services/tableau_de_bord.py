@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 
 from apps.accounts.repository import user_repository
-from apps.confiance.models import StatutSignalement
-from apps.confiance.repository import signalement_repository
+from apps.confiance.services import compter_signalements_ouverts
 from apps.dashboard.demo import COMPTES_DEMO
 from apps.kyc.models import StatutKyc, TypeDossier
 from apps.kyc.repository import dossier_repository
@@ -49,7 +48,7 @@ def tableau_de_bord(periode: str) -> dict:
         },
         "a_traiter": {
             "kyc_en_attente": dossier_repository.compter(statut=StatutKyc.EN_ATTENTE),
-            "signalements_ouverts": signalement_repository.compter(statut=StatutSignalement.OUVERT),
+            "signalements_ouverts": compter_signalements_ouverts(),
             "litiges": reservation_repository.compter(statut=StatutReservation.LITIGE),
             "retraits_en_attente": transaction_repository.compter_retraits_en_attente(),
         },

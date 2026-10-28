@@ -25,6 +25,7 @@ from apps.portefeuille.services.commun import (
     numero_mobile_money,
     verifier_moyen,
 )
+from apps.portefeuille.services.notifications import notifier_recharge
 
 
 def _telephone(utilisateur, telephone: str) -> str:
@@ -81,6 +82,7 @@ def recharger(utilisateur, montant: int, moyen: str, telephone: str = "") -> Tra
         )
         action = "portefeuille.recharger" if resultat.statut == S.VALIDEE else "paiement.initier"
         journaliser(action, ressource=utilisateur, details=_details(ligne))
+        notifier_recharge(ligne)  # validée tout de suite (simulation) ; rien si en attente
     return ligne
 
 
@@ -109,6 +111,7 @@ def _actualiser(transaction_id, systeme: bool) -> Transaction:
             code_motif=resultat.code,
             details=_details(ligne),
         )
+        notifier_recharge(ligne)
     return ligne
 
 
@@ -142,6 +145,7 @@ def _abandonner(transaction_id) -> bool:
             code_motif="DELAI_DEPASSE",
             details=_details(ligne),
         )
+        notifier_recharge(ligne)
     return True
 
 
