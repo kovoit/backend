@@ -13,7 +13,7 @@ RUN DJANGO_SECRET_KEY=build DATABASE_URL=sqlite:////tmp/build.db \
     python manage.py collectstatic --noinput
 
 # Dossier des pièces KYC créé ici : le volume de production en hérite les droits de kovoit
-RUN mkdir -p /app/prive && useradd --create-home --uid 1000 kovoit && chown -R kovoit /app
+RUN mkdir -p /app/prive /app/media && useradd --create-home --uid 1000 kovoit && chown -R kovoit /app
 USER kovoit
 
 EXPOSE 8000
