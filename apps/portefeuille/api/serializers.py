@@ -28,11 +28,13 @@ class TransactionSerializer(serializers.ModelSerializer):
 class OperationMobileMoneySerializer(serializers.Serializer):
     montant = serializers.IntegerField(min_value=1, help_text="Montant en F CFA")
     moyen = serializers.ChoiceField(choices=MoyenPaiement.choices, help_text="flooz ou mixx")
-    telephone = serializers.RegexField(
-        r"^\+?[0-9 ]{8,20}$",
+    # Lu par le service (apps/core/telephone.py) : 400 TELEPHONE_INVALIDE, pas rejeté ici
+    telephone = serializers.CharField(
         required=False,
         default="",
-        help_text="Numéro Mobile Money (par défaut : téléphone du profil)",
+        allow_blank=True,
+        help_text="Numéro Mobile Money togolais : 8 chiffres commençant par 7 ou 9, "
+        "+228 facultatif (par défaut : téléphone du profil)",
     )
 
 

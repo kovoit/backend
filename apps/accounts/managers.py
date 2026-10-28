@@ -1,5 +1,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 
+from apps.core.telephone import normaliser_telephone
+
 
 class UserManager(BaseUserManager):
     """Création des utilisateurs. L'email est l'identifiant de connexion, toujours en minuscules."""
@@ -9,6 +11,8 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **champs):
         if not email:
             raise ValueError("L'email est obligatoire.")
+        if champs.get("telephone"):  # createsuperuser, scripts : même forme que l'API (D-62)
+            champs["telephone"] = normaliser_telephone(champs["telephone"])
         utilisateur = self.model(email=email.strip().lower(), **champs)
         if password:
             utilisateur.set_password(password)

@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.accounts.models import ModeActif, User, valider_telephone
+from apps.accounts.models import ModeActif, User
 from apps.accounts.services import etat_profil
 from apps.kyc.services import statuts_kyc
 
@@ -130,7 +130,14 @@ class ConnexionSerializer(serializers.Serializer):
 class ModificationProfilSerializer(serializers.Serializer):
     nom = serializers.CharField(max_length=100, required=False)
     prenom = serializers.CharField(max_length=100, required=False)
-    telephone = serializers.CharField(max_length=16, required=False, validators=[valider_telephone])
+    # Lu et normalisé par le service (400 TELEPHONE_INVALIDE), pas rejeté ici
+    telephone = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Mobile togolais : 8 chiffres commençant par 7 ou 9 ; espaces, tirets, points, "
+        "parenthèses et +228 / 00228 / 228 facultatifs. "
+        "Enregistré sous la forme +228XXXXXXXX.",
+    )
     photo = serializers.ImageField(required=False)
     accepter_cgu = serializers.BooleanField(
         required=False, default=False, help_text="Vrai : accepte les CGU en vigueur"

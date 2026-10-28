@@ -6,6 +6,9 @@ from django.db import models
 from apps.accounts.managers import UserManager
 from apps.core.models import BaseModel
 
+# Dernier filet, volontairement large : la règle togolaise (D-62) est appliquée à chaque
+# écriture par apps/core/telephone.py. Les anciens numéros illisibles, laissés tels quels par
+# la migration 0007, restent ainsi valides pour le Django admin.
 valider_telephone = RegexValidator(
     r"^\+?\d{8,15}$", "Numéro de téléphone invalide (8 à 15 chiffres, + facultatif)."
 )

@@ -13,6 +13,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.repository import user_repository
+from apps.core.telephone import normaliser_telephone
 from apps.kyc.models import StatutKyc, TypeDossier
 from apps.kyc.repository import dossier_repository
 from apps.portefeuille import services as portefeuille
@@ -75,6 +76,7 @@ class Command(BaseCommand):
     def _compte(self, donnees: dict, dossiers: list[str]):
         utilisateur, _ = user_repository.get_ou_creer(donnees["email"])
         champs = {k: v for k, v in donnees.items() if k != "email"}
+        champs["telephone"] = normaliser_telephone(champs["telephone"])
         utilisateur = user_repository.update(utilisateur, email_verifie=True, **champs)
         for type_dossier in dossiers:
             dossier = dossier_repository.get_ou_creer(utilisateur, type_dossier)
