@@ -72,5 +72,16 @@ class SimulationPaiementProvider(PaiementProvider):
         return Resultat(f"SIM-{moyen.upper()}-RET-{uuid.uuid4().hex[:8].upper()}", S.VALIDEE)
 
 
+class SimulationVersementManuelProvider(SimulationPaiementProvider):
+    """Démo du versement manuel : recharge simulée validée, retrait en attente (comme PayGate).
+
+    Le retrait est ensuite versé par un admin Finance depuis le back-office. Aucun appel réseau."""
+
+    versement_automatique = False
+
+    def verser(self, utilisateur, montant, moyen, telephone) -> Resultat:
+        return Resultat("", S.EN_ATTENTE, "VERSEMENT_MANUEL")
+
+
 def get_provider() -> PaiementProvider:
     return import_string(settings.PAIEMENT_PROVIDER)()
