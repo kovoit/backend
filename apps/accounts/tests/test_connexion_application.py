@@ -62,8 +62,9 @@ def test_ca_072_2_email_non_verifie_403_et_code_hors_delai_seulement():
     assert "access" not in premiere.content.decode()
     assert refus(seconde) == refus(premiere)
     assert len(mail.outbox) == 2  # inscription, puis connexion de 10 h 05 seulement
+    assert mail.outbox[1].to == [AMA]
     dernier = OtpCode.objects.order_by("-cree_le").first()
-    assert dernier.objet == "verification_email"
+    assert (dernier.objet, dernier.email) == ("verification_email", AMA)
     assert dernier.cree_le == datetime(2026, 10, 30, 10, 5, tzinfo=ZoneInfo("UTC"))
     assert refus(mauvais) == refus(inconnu) and mauvais.status_code == 401
 

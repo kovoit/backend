@@ -78,7 +78,11 @@ def test_ca_071_3_code_valable_dix_minutes(instant, attendu):
     assert email_verifie() is (attendu == 200)
 
 
-def test_ca_071_4_delai_de_renvoi_puis_plafond_horaire():
+def test_ca_071_4_delai_de_renvoi_puis_plafond_horaire(monkeypatch):
+    codes = iter([111111, 222222, 333333, 444444, 555555])
+    monkeypatch.setattr(
+        "apps.accounts.services.codes_email.secrets.randbelow", lambda _: next(codes)
+    )
     with freeze_time("2026-10-30 10:00:00"):
         inscrire()
         ancien = dernier_code()
@@ -87,9 +91,9 @@ def test_ca_071_4_delai_de_renvoi_puis_plafond_horaire():
     assert trop_tot.status_code == 429 and code_de(trop_tot) == "TROP_DE_REQUETES"
     with freeze_time("2026-10-30 10:01:01"):
         assert poster(RENVOYER, {"email": AMA}).status_code == 200
-        nouveau = dernier_code()
-        if nouveau != ancien:
-            assert code_de(verifier(ancien)) == "CODE_OTP_INVALIDE"
+        assert (ancien, dernier_code()) == ("111111", "222222")
+        assert code_de(verifier(ancien)) == "CODE_OTP_INVALIDE"
+        assert OtpCode.objects.filter(email=AMA, utilise=False).count() == 1
     # 3e, 4e (réinitialisation) et 5e envois : le plafond compte tous les objets
     with freeze_time("2026-10-30 10:02:02"):
         assert poster(RENVOYER, {"email": AMA}).status_code == 200

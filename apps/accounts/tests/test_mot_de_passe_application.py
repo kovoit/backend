@@ -86,6 +86,7 @@ def test_ca_073_3_mot_de_passe_faible_avant_le_code_qui_reste_valable(kofi):
 
     assert faible.status_code == 400 and code_de(faible) == "MOT_DE_PASSE_FAIBLE"
     assert faible.json()["reponse"]["erreurs"]["mot_de_passe"]
+    assert "12345678" not in faible.content.decode()  # T9 : jamais renvoyé
     kofi.refresh_from_db()
     assert kofi.check_password(MOT_DE_PASSE)
     assert OtpCode.objects.get().essais == 0

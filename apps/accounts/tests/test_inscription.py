@@ -81,6 +81,7 @@ def test_ca_070_3_mot_de_passe_faible(mot_de_passe):
     assert reponse.status_code == 400
     assert code_de(reponse) == "MOT_DE_PASSE_FAIBLE"
     assert reponse.json()["reponse"]["erreurs"]["mot_de_passe"]
+    assert mot_de_passe not in reponse.content.decode()  # T9 : jamais renvoyé
     assert not User.objects.exists() and mail.outbox == []
 
 
@@ -155,6 +156,7 @@ def test_ca_004_2_sans_acceptation_des_cgu(cgu):
 
 
 def test_ca_004_3_version_et_date_des_cgu_enregistrees(monkeypatch, client_de):
+    monkeypatch.setattr("apps.accounts.cgu.CGU_VERSION", "2026-10-24")
     with freeze_time("2026-10-30 10:00:00"):
         inscrire()
     compte = User.objects.get()
