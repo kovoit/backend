@@ -3,6 +3,7 @@
 Usage : alimenter le back-office React (listes, tableaux de bord, files KYC et litiges).
 Pour simplement tester l'API mobile dans Swagger, utiliser plutôt `seed_demo`.
 Développement uniquement : refusé quand DEBUG=False. Pour recommencer : `manage.py flush`.
+Chaque compte créé (`prenom.nomN@demo.kovoit.tg`) a le mot de passe `DEMO_MOT_DE_PASSE`.
 """
 
 import random
@@ -17,7 +18,7 @@ from freezegun import freeze_time
 from apps.accounts import services as comptes
 from apps.accounts.repository import user_repository
 from apps.confiance import services as confiance
-from apps.dashboard.demo import personnes
+from apps.dashboard.demo import DEMO_MOT_DE_PASSE, personnes
 from apps.dashboard.demo.activite import a_heure, demander, journee, publier
 from apps.portefeuille import services as portefeuille
 from apps.reservations import services as reservations
@@ -34,7 +35,10 @@ EN_ATTENTE = {6, 20, 21}
 
 
 class Command(BaseCommand):
-    help = "Crée des données de démonstration (utilisateurs, KYC, trajets, réservations…)."
+    help = (
+        "Crée des données de démonstration (utilisateurs, KYC, trajets, réservations…). "
+        f"Mot de passe de chaque compte créé : {DEMO_MOT_DE_PASSE}"
+    )
 
     def handle(self, *args, **options):
         if not settings.DEBUG:
@@ -52,6 +56,7 @@ class Command(BaseCommand):
         ):
             compteur = self._generer(admin, random.Random(2026))
         self.stdout.write(self.style.SUCCESS(f"Données de démo créées : {compteur}"))
+        self.stdout.write(f"Comptes : *@{personnes.DOMAINE}, mot de passe : {DEMO_MOT_DE_PASSE}")
 
     def _generer(self, admin, rng: random.Random) -> dict:
         maintenant = timezone.now()

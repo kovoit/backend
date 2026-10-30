@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw
 
 from apps.accounts import services as comptes
 from apps.accounts.repository import user_repository
+from apps.dashboard.demo import DEMO_MOT_DE_PASSE
 from apps.kyc import services as kyc
 from apps.kyc.models import TypePiece
 from apps.vehicules import services as vehicules
@@ -71,7 +72,9 @@ def email_de(index: int) -> str:
 
 def creer_personne(index: int):
     prenom, nom = _identite(index)
-    utilisateur = user_repository.creer(email_de(index), email_verifie=True)
+    utilisateur = user_repository.creer(
+        email_de(index), password=DEMO_MOT_DE_PASSE, email_verifie=True
+    )
     return comptes.modifier_profil(
         utilisateur, nom=nom, prenom=prenom, telephone=f"+2289{index:07d}"
     )

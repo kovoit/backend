@@ -1,9 +1,12 @@
 import pytest
 from django.core.management import CommandError, call_command
 
+from apps.accounts.models import User
+from apps.accounts.tests.aides_auth import connecter
 from apps.accounts.tests.factories import UserFactory
 from apps.confiance.models import Signalement
-from apps.dashboard.demo.personnes import DOMAINE
+from apps.dashboard.demo import DEMO_MOT_DE_PASSE
+from apps.dashboard.demo.personnes import DOMAINE, email_de
 from apps.kyc.models import KycDossier, KycPiece, StatutKyc
 from apps.reservations.models import Reservation, StatutReservation
 from apps.trajets.models import StatutTrajet, Trajet
@@ -28,6 +31,10 @@ def test_seed_backoffice_genere_un_jeu_coherent(en_dev):
     statuts = set(Reservation.objects.values_list("statut", flat=True))
     assert {StatutReservation.CLOTUREE, StatutReservation.DEMANDEE} <= statuts
     assert Signalement.objects.filter(statut="traite").exists()
+    comptes = User.objects.filter(email__endswith=f"@{DOMAINE}")
+    assert comptes.count() == 24
+    assert all(c.email_verifie and c.check_password(DEMO_MOT_DE_PASSE) for c in comptes)
+    assert connecter(email_de(0), DEMO_MOT_DE_PASSE).status_code == 200
 
 
 def test_seed_backoffice_ne_s_execute_qu_une_fois(en_dev):
