@@ -12,6 +12,10 @@ from apps.vehicules.models import TypeVehicule
 
 LATITUDE = {"min_value": -90, "max_value": 90}
 LONGITUDE = {"min_value": -180, "max_value": 180}
+TRACE_AIDE = (
+    "Tracé de la route pour la carte (affichage seulement, jamais dans le prix). "
+    "null : trajet publié avant le tracé"
+)
 
 
 class PointSerializer(serializers.ModelSerializer):
@@ -66,9 +70,7 @@ class TrajetDetailSerializer(TrajetSerializer):
         help_text="Prix pour le point de prise en charge et l'arrivée demandés (sinon : la place)"
     )
     paiement = serializers.SerializerMethodField()
-    trace = TraceSerializer(
-        read_only=True, allow_null=True, help_text="null : trajet publié avant le tracé"
-    )
+    trace = TraceSerializer(read_only=True, allow_null=True, help_text=TRACE_AIDE)
 
     class Meta(TrajetSerializer.Meta):
         fields = [*TrajetSerializer.Meta.fields, "prix_passager", "paiement", "trace"]
@@ -99,7 +101,7 @@ class TrajetConducteurSerializer(TrajetSerializer):
 class TrajetPublieSerializer(TrajetConducteurSerializer):
     """Réponse 201 de la publication : le trajet du conducteur et son tracé."""
 
-    trace = TraceSerializer(read_only=True, allow_null=True)
+    trace = TraceSerializer(read_only=True, allow_null=True, help_text=TRACE_AIDE)
 
     class Meta(TrajetConducteurSerializer.Meta):
         fields = [*TrajetConducteurSerializer.Meta.fields, "trace"]
@@ -145,7 +147,8 @@ class RechercheSerializer(serializers.Serializer):
         choices=TypeVehicule.choices,
         required=False,
         allow_blank=True,
-        help_text="Facultatif : seulement les trajets en moto ou en voiture (vide : tous)",
+        help_text="Facultatif : seulement les trajets en moto ou en voiture (absent ou vide : "
+        "tous ; toute autre valeur, majuscules comprises : 400 DONNEES_INVALIDES)",
     )
 
 

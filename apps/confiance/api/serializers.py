@@ -19,7 +19,9 @@ class PersonneSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     prenom = serializers.CharField()
     nom = serializers.CharField()
-    photo = serializers.ImageField()
+    photo = serializers.ImageField(
+        help_text="URL relative (/media/…) ou null : le client la préfixe avec l'origine de l'API"
+    )
     confiance = serializers.SerializerMethodField()
 
     @extend_schema_field(ConfianceSerializer)

@@ -72,6 +72,9 @@ class EtatProfilSerializer(serializers.Serializer):
     alertes = AlerteSerializer(many=True)
 
 
+PHOTO_AIDE = "URL relative (/media/…) ou null : le client la préfixe avec l'origine de l'API"
+
+
 class ProfilSerializer(serializers.ModelSerializer):
     kyc = serializers.SerializerMethodField()
     etat = serializers.SerializerMethodField()
@@ -100,6 +103,7 @@ class ProfilSerializer(serializers.ModelSerializer):
             "etat",
         ]
         read_only_fields = fields
+        extra_kwargs = {"photo": {"help_text": PHOTO_AIDE}}
 
     def get_cgu_acceptees(self, utilisateur) -> bool:
         from apps.accounts.cgu import CGU_VERSION
@@ -138,7 +142,10 @@ class ModificationProfilSerializer(serializers.Serializer):
         "parenthèses et +228 / 00228 / 228 facultatifs. "
         "Enregistré sous la forme +228XXXXXXXX.",
     )
-    photo = serializers.ImageField(required=False)
+    photo = serializers.ImageField(
+        required=False,
+        help_text="Fichier image envoyé en multipart/form-data (remplace la photo actuelle)",
+    )
     accepter_cgu = serializers.BooleanField(
         required=False, default=False, help_text="Vrai : accepte les CGU en vigueur"
     )
