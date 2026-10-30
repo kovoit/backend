@@ -101,3 +101,18 @@ def test_les_sessions_ouvertes_sont_revoquees(api_client, admin_kovoit):
 
     rafraichir = api_client.post("/api/v1/auth/admin/jeton/rafraichir/")
     assert rafraichir.status_code == 401
+
+
+def test_similarite_avec_le_nom_de_l_admin_refusee(api_client, admin_kovoit):
+    """Réglage D-79 (similarité sur email, prénom, nom) : le back-office en profite aussi."""
+    uid, jeton = _lien(api_client)
+
+    faible = api_client.post(
+        REINITIALISER, {"uid": uid, "jeton": jeton, "mot_de_passe": "Amegah2026"}, format="json"
+    )
+    assert faible.status_code == 400
+    assert faible.json()["reponse"]["code"] == "MOT_DE_PASSE_FAIBLE"
+    reponse = api_client.post(
+        REINITIALISER, {"uid": uid, "jeton": jeton, "mot_de_passe": NOUVEAU}, format="json"
+    )
+    assert reponse.status_code == 200

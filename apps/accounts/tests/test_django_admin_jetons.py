@@ -100,8 +100,8 @@ def test_ecrans_des_jetons_introuvables(client, visiteur, refresh_superutilisate
 
 
 def test_aucun_refresh_dans_les_reponses(client, visiteur, refresh_superutilisateur):
-    """Ni le refresh du cookie, ni la copie stockée en base (émise avant l'ajout du claim
-    `canal`, mais signée et rejouable), ni son jti."""
+    """Ni le refresh du cookie, ni la copie stockée en base (signée, avec le claim `canal`,
+    et rejouable), ni son jti."""
     compte, refresh = refresh_superutilisateur
     jeton = OutstandingToken.objects.get(user=compte)
     assert jeton.jti == RefreshToken(refresh)["jti"]

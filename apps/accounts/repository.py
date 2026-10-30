@@ -13,6 +13,9 @@ class UserRepository(BaseRepository[User]):
     def get_par_email(self, email: str) -> User | None:
         return self.get_or_none(email=email.strip().lower())
 
+    def email_existe(self, email: str) -> bool:
+        return self.exists(email__iexact=email.strip())
+
     def creer(self, email: str, **champs) -> User:
         return User.objects.create_user(email=email, **champs)
 
@@ -38,9 +41,12 @@ class UserRepository(BaseRepository[User]):
     def suspensions_expirees(self, maintenant: datetime):
         return self.filter(statut_compte=StatutCompte.SUSPENDU, suspendu_jusqu_au__lte=maintenant)
 
-    def changer_mot_de_passe(self, utilisateur: User, mot_de_passe: str) -> User:
+    def changer_mot_de_passe(self, utilisateur: User, mot_de_passe: str, **champs) -> User:
+        """`champs` : autres champs enregistrés avec le mot de passe (ex. email_verifie)."""
         utilisateur.set_password(mot_de_passe)
-        utilisateur.save(update_fields=["password"])
+        for nom, valeur in champs.items():
+            setattr(utilisateur, nom, valeur)
+        utilisateur.save(update_fields=["password", *champs])
         return utilisateur
 
     def revoquer_sessions(self, utilisateur: User) -> None:
@@ -78,23 +84,27 @@ class UserRepository(BaseRepository[User]):
 
 
 class OtpRepository(BaseRepository[OtpCode]):
+    """Codes e-mail rangés par objet (ObjetCode) ; le plafond horaire compte tous les objets."""
+
     model = OtpCode
 
-    def dernier_envoye(self, email: str) -> OtpCode | None:
-        return self.filter(email=email).order_by("-cree_le").first()
+    def dernier_envoye(self, email: str, objet: str) -> OtpCode | None:
+        return self.filter(email=email, objet=objet).order_by("-cree_le").first()
 
     def nombre_envoyes_depuis(self, email: str, depuis: datetime) -> int:
         return self.filter(email=email, cree_le__gte=depuis).count()
 
-    def invalider_actifs(self, email: str) -> None:
-        self.filter(email=email, utilise=False).update(utilise=True)
+    def invalider_actifs(self, email: str, objet: str) -> None:
+        self.filter(email=email, objet=objet, utilise=False).update(utilise=True)
 
-    def dernier_actif_verrouille(self, email: str, maintenant: datetime) -> OtpCode | None:
+    def dernier_actif_verrouille(
+        self, email: str, objet: str, maintenant: datetime
+    ) -> OtpCode | None:
         """À appeler dans un `transaction.atomic()`."""
         return (
             self.queryset()
             .select_for_update()
-            .filter(email=email, utilise=False, expire_le__gt=maintenant)
+            .filter(email=email, objet=objet, utilise=False, expire_le__gt=maintenant)
             .order_by("-cree_le")
             .first()
         )

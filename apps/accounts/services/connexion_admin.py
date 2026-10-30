@@ -1,6 +1,6 @@
 """Connexion au back-office : email + mot de passe, réservée aux administrateurs (is_staff).
 
-Le flux OTP (services/otp.py) reste celui de l'application mobile.
+L'application mobile a son propre flux (services/connexion.py) : jetons `canal` = mobile.
 """
 
 from contextlib import suppress
@@ -13,7 +13,7 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.repository import user_repository
-from apps.audit.contexte import CLAIM_CANAL
+from apps.accounts.services.jetons import emettre_jetons
 from apps.audit.models import Canal
 from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite, ErreurMetier
@@ -49,10 +49,8 @@ def connecter_admin(email: str, mot_de_passe: str) -> dict:
         raise CompteNonAdmin()
     update_last_login(None, utilisateur)
     journaliser("session.connecter", ressource=utilisateur, acteur=utilisateur)
-    jetons = RefreshToken.for_user(utilisateur)
-    # Claim signé : le serveur sait que ce jeton vient du back-office web (journal d'audit)
-    jetons[CLAIM_CANAL] = Canal.WEB
-    return {"utilisateur": utilisateur, "access": str(jetons.access_token), "refresh": str(jetons)}
+    # Claim signé `canal` = web, exigé par les routes /api/v1/admin/ (D-71)
+    return {"utilisateur": utilisateur} | emettre_jetons(utilisateur, Canal.WEB)
 
 
 def rafraichir_admin(refresh: str | None) -> dict:

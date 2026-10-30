@@ -14,6 +14,13 @@ from django.http import HttpRequest
 from apps.audit.models import Canal
 
 CLAIM_CANAL = "canal"
+# Routes publiques de l'application (connexion encore sans jeton)
+PREFIXES_MOBILE = (
+    "/api/v1/auth/otp/",
+    "/api/v1/auth/inscription/",
+    "/api/v1/auth/connexion/",
+    "/api/v1/auth/mot-de-passe/",
+)
 ENTETE_REQUETE = "X-Request-ID"
 _FORMAT_REQUEST_ID = re.compile(r"^[0-9a-fA-F]{32}$")
 _requete: ContextVar[HttpRequest | None] = ContextVar("requete_audit", default=None)
@@ -65,7 +72,7 @@ def canal_courant() -> str:
         return valeur
     if jeton is None and requete.path.startswith("/api/v1/auth/admin/"):
         return Canal.WEB
-    if jeton is None and requete.path.startswith("/api/v1/auth/otp/"):
+    if jeton is None and requete.path.startswith(PREFIXES_MOBILE):
         return Canal.MOBILE
     return Canal.API
 

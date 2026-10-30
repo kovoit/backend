@@ -3,9 +3,13 @@ from datetime import timedelta
 import pytest
 from django.core.cache import cache
 from django.utils import timezone
+from rest_framework import throttling  # noqa: F401 (voir ci-dessous)
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.tests.factories import AdminFactory, UserFactory
+from apps.audit.contexte import CLAIM_CANAL
+from apps.audit.models import Canal
 from apps.kyc.tests.factories import verifier_kyc
 from apps.notifications.push import FakePushSender
 from apps.portefeuille import services as portefeuille
@@ -13,6 +17,9 @@ from apps.reservations import services as reservations
 from apps.trajets import services as trajets
 from apps.vehicules.tests.factories import VehiculeFactory
 from kovoit.celery import app as celery_app
+
+# `throttling` est importé avant tout freeze_time : ses classes gardent le vrai `time.time`
+# comme horloge (importé sous freeze_time, `timer` serait la fausse horloge, appelée en méthode).
 
 # Lieux de Lomé utilisés dans les tests
 ADIDOGOME = {"lat": 6.1745, "lng": 1.1690}
@@ -57,13 +64,25 @@ def api_client():
     return APIClient()
 
 
+def jeton_acces(utilisateur, canal: str) -> AccessToken:
+    """Jeton d'accès signé portant le claim `canal` (web : back-office, mobile : application)."""
+    jeton = AccessToken.for_user(utilisateur)
+    jeton[CLAIM_CANAL] = canal
+    return jeton
+
+
 @pytest.fixture
 def client_de():
-    """Fabrique : client API authentifié pour un utilisateur donné."""
+    """Fabrique : client API authentifié pour un utilisateur donné.
 
-    def fabriquer(utilisateur):
+    Un admin (is_staff) porte un jeton `canal` = web, exigé par les routes /api/v1/admin/
+    (D-71) ; les autres comptes, aucun jeton. `canal` impose un jeton portant ce canal."""
+
+    def fabriquer(utilisateur, canal: str | None = None):
+        canal = canal or (Canal.WEB if utilisateur.is_staff else None)
         client = APIClient()
-        client.force_authenticate(utilisateur)
+        jeton = jeton_acces(utilisateur, canal) if canal else None
+        client.force_authenticate(utilisateur, token=jeton)
         return client
 
     return fabriquer

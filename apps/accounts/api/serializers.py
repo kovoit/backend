@@ -7,11 +7,11 @@ from apps.kyc.services import statuts_kyc
 
 
 class DemandeOtpSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
 
 
 class VerificationOtpSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
     code = serializers.RegexField(r"^\d{6}$", error_messages={"invalid": "Code à 6 chiffres."})
 
 
@@ -28,7 +28,7 @@ class UtilisateurResumeSerializer(serializers.Serializer):
     """Identité courte avec coordonnées : réservé aux vues du back-office."""
 
     id = serializers.UUIDField()
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
     nom = serializers.CharField()
     prenom = serializers.CharField()
     telephone = serializers.CharField()
