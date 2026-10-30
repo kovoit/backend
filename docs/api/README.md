@@ -1,13 +1,15 @@
 # API Kovoit — contrat pour les clients (mobile Flutter, admin React)
 
-> Périmètre actuel de ce dossier : **seulement les routes touchées par la mission M-003**
-> (tracé du trajet, filtre par type de véhicule, photo de profil). Le reste de l'API est
-> décrit par le schéma OpenAPI (`/api/docs/`) et par `PRD.md` §15.
+> Périmètre actuel de ce dossier : **les routes touchées par les missions M-003** (tracé du
+> trajet, filtre par type de véhicule, photo de profil) **et M-004** (connexion par e-mail +
+> mot de passe). Le reste de l'API est décrit par le schéma OpenAPI (`/api/docs/`) et par
+> `PRD.md` §15.
 
 ## Index
 
 | Fichier | Routes |
 |---|---|
+| [`auth.md`](auth.md) | `POST /api/v1/auth/inscription/` (+ `verifier/`, `renvoyer-code/`) · `auth/connexion/` · `auth/mot-de-passe/oublie/` · `…/reinitialiser/` · `auth/jeton/rafraichir/` · `auth/deconnexion/` · refus `CANAL_WEB_REQUIS` des routes `/admin/` · `auth/otp/*` (dépréciées) |
 | [`trajets.md`](trajets.md) | `POST /api/v1/trajets/` · `GET /api/v1/trajets/{id}/` · `GET /api/v1/trajets/recherche/` |
 | [`profil.md`](profil.md) | `PATCH /api/v1/moi/` (photo de profil) · règle des URL de `photo` sur toutes les routes |
 | [`CHANGELOG.md`](CHANGELOG.md) | Modifications du contrat (cassantes signalées) |
@@ -20,13 +22,21 @@ sur la carte.
 
 ## Authentification
 
-1. `POST /api/v1/auth/otp/demander/` `{ "email": … }` : un code à 6 chiffres part par email.
-2. `POST /api/v1/auth/otp/verifier/` `{ "email": …, "code": "123456" }` : renvoie
-   `access` (15 min) et `refresh` (7 jours).
-3. Chaque requête porte l'en-tête `Authorization: Bearer <access>`.
-4. `access` expiré : `POST /api/v1/auth/jeton/rafraichir/` `{ "refresh": … }`.
+Application mobile : **e-mail + mot de passe**, voir [`auth.md`](auth.md) (inscription,
+vérification de l'adresse par code, connexion, mot de passe oublié). La connexion par code
+seul (`auth/otp/*`) est **dépréciée** (retrait après la migration du mobile, D-70).
 
-Les routes décrites ici exigent un compte connecté **avec email vérifié**.
+1. `POST /api/v1/auth/connexion/` (ou `auth/inscription/verifier/`) renvoie `access` (15 min)
+   et `refresh` (7 jours).
+2. Chaque requête porte l'en-tête `Authorization: Bearer <access>`.
+3. `access` expiré : `POST /api/v1/auth/jeton/rafraichir/` `{ "refresh": … }` (rotation :
+   garder le nouveau `refresh`).
+
+Back-office React : `POST /api/v1/auth/admin/connexion/` ; seuls ses jetons (`canal` = `web`)
+ouvrent `/api/v1/admin/…` (sinon 403 `CANAL_WEB_REQUIS`).
+
+Les routes de `trajets.md` et `profil.md` exigent un compte connecté **avec email vérifié** ;
+les routes de `auth.md` sont publiques, sauf la déconnexion.
 
 ## Enveloppe de réponse (toutes les routes)
 
@@ -78,6 +88,7 @@ Les listes paginées renvoient dans `reponse` : `{ "count", "next", "previous", 
 | 401 | `AUTHENTIFICATION_ECHOUEE` | `Session invalide ou expirée. Reconnectez-vous.` | Jeton invalide ou expiré : rafraîchir |
 | 403 | `EMAIL_NON_VERIFIE` | `Vérifiez votre adresse email pour accéder à ce service.` | Email non vérifié |
 | 403 | `COMPTE_SUSPENDU` | `Votre compte est suspendu : action impossible.` | Compte suspendu (publication) |
+| 403 | `CANAL_WEB_REQUIS` | `Connectez-vous au back-office pour accéder à cette partie de Kovoit.` | Admin hors jeton du back-office sur `/admin/…` |
 | 403 | `ACCES_REFUSE` | variable | Autre refus d'accès |
 | 404 | `RESSOURCE_INTROUVABLE` | `Trajet introuvable.` | Ressource absente ou non accessible |
 | 405 | `METHODE_NON_AUTORISEE` | variable | Mauvaise méthode HTTP |
@@ -85,7 +96,8 @@ Les listes paginées renvoient dans `reponse` : `{ "count", "next", "previous", 
 | 429 | `TROP_DE_REQUETES` | variable | Limite de débit atteinte |
 | 500 | `ERREUR_INTERNE` | `Une erreur interne est survenue. Réessayez plus tard.` | Incident serveur |
 
-Les codes propres à une route (ex. `CONDUCTEUR_NON_HABILITE`, `DEPART_PASSE`) sont listés
+Les codes propres à une route (ex. `CONDUCTEUR_NON_HABILITE`, `DEPART_PASSE`,
+`IDENTIFIANTS_INVALIDES`, `CODE_OTP_INVALIDE`, `JETON_AUTRE_COMPTE`) sont listés
 dans le fichier de la route.
 
 ## Machine à états de la réservation (rappel)
