@@ -48,7 +48,7 @@ def _slug(valeur: str) -> str:
     return sans_accents.lower()
 
 
-def _image(titre: str, titulaire: str) -> SimpleUploadedFile:
+def image_fictive(titre: str, titulaire: str) -> SimpleUploadedFile:
     """Pièce fictive lisible dans la visionneuse du back-office."""
     image = Image.new("RGB", (640, 400), "#EFF3F9")
     dessin = ImageDraw.Draw(image)
@@ -97,7 +97,7 @@ def soumettre_dossier(utilisateur, type_dossier: str):
     titulaire = f"{utilisateur.prenom} {utilisateur.nom}"
     for type_piece in PIECES[type_dossier]:
         titre = TypePiece(type_piece).label
-        kyc.ajouter_piece(utilisateur, type_dossier, type_piece, _image(titre, titulaire))
+        kyc.ajouter_piece(utilisateur, type_dossier, type_piece, image_fictive(titre, titulaire))
     return kyc.soumettre(utilisateur, type_dossier)
 
 
