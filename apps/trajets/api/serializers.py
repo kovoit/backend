@@ -8,6 +8,7 @@ from apps.trajets.api.tarification import TarificationSerializer
 from apps.trajets.api.trace import TraceSerializer
 from apps.trajets.models import PointPriseEnCharge, Trajet
 from apps.vehicules.api.serializers import VehiculeResumeSerializer
+from apps.vehicules.models import TypeVehicule
 
 LATITUDE = {"min_value": -90, "max_value": 90}
 LONGITUDE = {"min_value": -180, "max_value": 180}
@@ -140,6 +141,12 @@ class RechercheSerializer(serializers.Serializer):
     arrivee_lat = serializers.FloatField(**LATITUDE)
     arrivee_lng = serializers.FloatField(**LONGITUDE)
     date_heure = serializers.DateTimeField()
+    type_vehicule = serializers.ChoiceField(
+        choices=TypeVehicule.choices,
+        required=False,
+        allow_blank=True,
+        help_text="Facultatif : seulement les trajets en moto ou en voiture (vide : tous)",
+    )
 
 
 class ResultatRechercheSerializer(serializers.Serializer):

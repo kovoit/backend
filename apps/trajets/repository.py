@@ -29,9 +29,10 @@ class TrajetRepository(BaseRepository[Trajet]):
         lat_max: float,
         lng_min: float,
         lng_max: float,
+        type_vehicule: str | None = None,
     ):
         """Pré-filtre en base (boîte autour de l'arrivée) ; le rayon exact est calculé ensuite."""
-        return (
+        qs = (
             self.queryset()
             .filter(
                 statut=StatutTrajet.PUBLIE,
@@ -43,6 +44,9 @@ class TrajetRepository(BaseRepository[Trajet]):
             )
             .exclude(conducteur=exclure_conducteur)
         )
+        if type_vehicule:
+            qs = qs.filter(vehicule__type_vehicule=type_vehicule)
+        return qs
 
     def de_conducteur(self, conducteur):
         return (

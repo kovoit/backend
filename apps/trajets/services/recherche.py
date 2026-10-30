@@ -39,6 +39,7 @@ def rechercher(
     arrivee_lat: float,
     arrivee_lng: float,
     date_heure: datetime,
+    type_vehicule: str | None = None,
 ) -> list[ResultatRecherche]:
     fenetre = timedelta(minutes=get_param("fenetre_horaire_min"))
     rayon_depart = float(get_param("rayon_depart_km"))
@@ -49,6 +50,7 @@ def rechercher(
         date_heure + fenetre,
         utilisateur,
         *_boite(arrivee_lat, arrivee_lng, rayon_arrivee),
+        type_vehicule=type_vehicule or None,
     )
 
     resultats = []
