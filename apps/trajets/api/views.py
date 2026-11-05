@@ -19,13 +19,13 @@ class PublierVue(APIView):
         tags=[TAG],
         summary="Publier un trajet (prix par place fixé par Kovoit)",
         request=s.PublicationSerializer,
-        responses={201: s.TrajetConducteurSerializer},
+        responses={201: s.TrajetPublieSerializer},
     )
     def post(self, request):
         entree = s.PublicationSerializer(data=request.data)
         entree.is_valid(raise_exception=True)
         trajet = services.publier(request.user, **entree.validated_data)
-        return succes("Trajet publié.", s.TrajetConducteurSerializer(trajet).data, 201)
+        return succes("Trajet publié.", s.TrajetPublieSerializer(trajet).data, 201)
 
 
 class EstimationVue(APIView):

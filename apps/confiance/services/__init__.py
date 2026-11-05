@@ -1,4 +1,5 @@
 from apps.confiance.services.avis import (
+    compter_signalements_ouverts,
     dernieres_notes,
     get_signalement,
     lister_signalements,
@@ -15,6 +16,7 @@ from apps.confiance.services.fiabilite import (
 )
 
 __all__ = [
+    "compter_signalements_ouverts",
     "dernieres_notes",
     "detail_fiabilite",
     "enregistrer_incident",

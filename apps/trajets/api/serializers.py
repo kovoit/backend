@@ -5,11 +5,17 @@ from apps.confiance.api.serializers import PersonneSerializer
 from apps.portefeuille.api.serializers import ApercuPaiementSerializer
 from apps.portefeuille.services import apercu_paiement
 from apps.trajets.api.tarification import TarificationSerializer
+from apps.trajets.api.trace import TraceSerializer
 from apps.trajets.models import PointPriseEnCharge, Trajet
 from apps.vehicules.api.serializers import VehiculeResumeSerializer
+from apps.vehicules.models import TypeVehicule
 
 LATITUDE = {"min_value": -90, "max_value": 90}
 LONGITUDE = {"min_value": -180, "max_value": 180}
+TRACE_AIDE = (
+    "Tracé de la route pour la carte (affichage seulement, jamais dans le prix). "
+    "null : trajet publié avant le tracé"
+)
 
 
 class PointSerializer(serializers.ModelSerializer):
@@ -64,9 +70,10 @@ class TrajetDetailSerializer(TrajetSerializer):
         help_text="Prix pour le point de prise en charge et l'arrivée demandés (sinon : la place)"
     )
     paiement = serializers.SerializerMethodField()
+    trace = TraceSerializer(read_only=True, allow_null=True, help_text=TRACE_AIDE)
 
     class Meta(TrajetSerializer.Meta):
-        fields = [*TrajetSerializer.Meta.fields, "prix_passager", "paiement"]
+        fields = [*TrajetSerializer.Meta.fields, "prix_passager", "paiement", "trace"]
 
     def get_prix_passager(self, trajet: Trajet) -> int:
         return self.context.get("prix_passager") or trajet.prix_place
@@ -89,6 +96,15 @@ class TrajetConducteurSerializer(TrajetSerializer):
     @extend_schema_field(TarificationSerializer(allow_null=True))
     def get_tarification(self, trajet: Trajet) -> dict | None:
         return TarificationSerializer(trajet.tarification).data if trajet.tarification else None
+
+
+class TrajetPublieSerializer(TrajetConducteurSerializer):
+    """Réponse 201 de la publication : le trajet du conducteur et son tracé."""
+
+    trace = TraceSerializer(read_only=True, allow_null=True, help_text=TRACE_AIDE)
+
+    class Meta(TrajetConducteurSerializer.Meta):
+        fields = [*TrajetConducteurSerializer.Meta.fields, "trace"]
 
 
 class PointEntreeSerializer(serializers.Serializer):
@@ -127,6 +143,13 @@ class RechercheSerializer(serializers.Serializer):
     arrivee_lat = serializers.FloatField(**LATITUDE)
     arrivee_lng = serializers.FloatField(**LONGITUDE)
     date_heure = serializers.DateTimeField()
+    type_vehicule = serializers.ChoiceField(
+        choices=TypeVehicule.choices,
+        required=False,
+        allow_blank=True,
+        help_text="Facultatif : seulement les trajets en moto ou en voiture (absent ou vide : "
+        "tous ; toute autre valeur, majuscules comprises : 400 DONNEES_INVALIDES)",
+    )
 
 
 class ResultatRechercheSerializer(serializers.Serializer):

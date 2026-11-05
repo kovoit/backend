@@ -26,16 +26,15 @@ def test_economies_du_conducteur(client_de, conducteur, trajet_cloture):
     assert economies["par_trajet"][0]["trajet_id"] == str(trajet_cloture.id)
 
 
-def test_indicateurs_admin(client_admin, trajet_cloture):
-    indicateurs = client_admin.get("/api/v1/admin/indicateurs/").json()["reponse"]
+def test_d39_l_ancienne_route_des_indicateurs_n_existe_plus(client_admin, admin):
+    """D-39 : GET /api/v1/admin/indicateurs/ est supprimée, même pour un admin doté des quatre
+    rôles. Ses chiffres sont servis par /api/v1/admin/tableau-de-bord/."""
+    assert admin.groups.count() == 4
 
-    assert indicateurs["trajets_termines"] == 1
-    assert indicateurs["passagers_transportes"] == 1
-    assert (
-        indicateurs["economies_realisees"] == 255
-    )  # 300 F payés − 45 F de commission Kovoit (15 %)
-    assert indicateurs["conducteurs_verifies"] == 1
+    reponse = client_admin.get("/api/v1/admin/indicateurs/")
 
-
-def test_indicateurs_reserves_a_l_admin(client_utilisateur):
-    assert client_utilisateur.get("/api/v1/admin/indicateurs/").status_code == 403
+    assert reponse.status_code == 404
+    corps = reponse.json()
+    assert corps["statut"] == "failed"
+    assert corps["message"]
+    assert corps["reponse"]["code"] == "RESSOURCE_INTROUVABLE"

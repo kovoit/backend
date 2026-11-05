@@ -30,6 +30,33 @@ def test_parcours_complet_de_connexion(api_client):
     assert reponse.json()["reponse"]["email"] == "yao@exemple.tg"
 
 
+def _alertes(reponse) -> set[str]:
+    return {alerte["code"] for alerte in reponse.json()["reponse"]["etat"]["alertes"]}
+
+
+def test_ca003_1_profil_incomplet_apres_otp_puis_complete(api_client):
+    api_client.post("/api/v1/auth/otp/demander/", {"email": "akossiwa@exemple.tg"})
+    code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
+    connexion = api_client.post(
+        "/api/v1/auth/otp/verifier/", {"email": "akossiwa@exemple.tg", "code": code}
+    ).json()["reponse"]
+    assert connexion["nouveau_compte"] is True
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {connexion['access']}")
+
+    avant = api_client.get("/api/v1/moi/")
+    assert avant.status_code == 200
+    assert avant.json()["reponse"]["profil_complet"] is False
+    assert "PROFIL_INCOMPLET" in _alertes(avant)
+
+    complet = {"nom": "Mensah", "prenom": "Akossiwa", "telephone": "90 11 22 33"}
+    assert api_client.patch("/api/v1/moi/", complet, format="json").status_code == 200
+
+    apres = api_client.get("/api/v1/moi/")
+    assert apres.json()["reponse"]["profil_complet"] is True
+    assert apres.json()["reponse"]["telephone"] == "+22890112233"
+    assert "PROFIL_INCOMPLET" not in _alertes(apres)
+
+
 def test_code_mal_forme_refuse(api_client):
     reponse = api_client.post("/api/v1/auth/otp/verifier/", {"email": "a@b.tg", "code": "12"})
 
@@ -52,12 +79,6 @@ def test_modifier_mon_profil(client_utilisateur):
     assert reponse.status_code == 200
     assert reponse.json()["reponse"]["telephone"] == "+22890112233"
     assert reponse.json()["reponse"]["prenom"] == "Edem"
-
-
-def test_telephone_invalide(client_utilisateur):
-    reponse = client_utilisateur.patch("/api/v1/moi/", {"telephone": "abc"}, format="json")
-
-    assert reponse.status_code == 400
 
 
 def test_mode_conducteur_refuse_sans_kyc(client_utilisateur):

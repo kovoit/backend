@@ -27,6 +27,21 @@ class LienReinitialisationInvalide(DonneesInvalides):
     message = "Ce lien n'est plus valable. Demandez un nouveau lien de réinitialisation."
 
 
+def valider_mot_de_passe(mot_de_passe: str, utilisateur) -> None:
+    """Les 4 validateurs de Django (D-79), la similarité portant sur email, prénom et nom.
+
+    `utilisateur` peut être un `User` non enregistré (inscription).
+    """
+    try:
+        validate_password(mot_de_passe, utilisateur)
+    except ValidationError as exc:
+        raise DonneesInvalides(
+            "Mot de passe trop faible.",
+            code="MOT_DE_PASSE_FAIBLE",
+            erreurs={"mot_de_passe": list(exc.messages)},
+        ) from exc
+
+
 def _admin_actif(email: str):
     utilisateur = user_repository.get_or_none(email=email.strip().lower())
     if utilisateur is None or not (utilisateur.is_active and utilisateur.is_staff):
@@ -66,14 +81,7 @@ def reinitialiser(uid: str, jeton: str, mot_de_passe: str) -> None:
         or not default_token_generator.check_token(utilisateur, jeton)
     ):
         raise LienReinitialisationInvalide()
-    try:
-        validate_password(mot_de_passe, utilisateur)
-    except ValidationError as exc:
-        raise DonneesInvalides(
-            "Mot de passe trop faible.",
-            code="MOT_DE_PASSE_FAIBLE",
-            erreurs={"mot_de_passe": list(exc.messages)},
-        ) from exc
+    valider_mot_de_passe(mot_de_passe, utilisateur)
     with transaction.atomic():
         user_repository.changer_mot_de_passe(utilisateur, mot_de_passe)
         user_repository.revoquer_sessions(utilisateur)

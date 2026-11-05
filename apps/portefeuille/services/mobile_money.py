@@ -25,6 +25,7 @@ from apps.portefeuille.services.commun import (
     numero_mobile_money,
     verifier_moyen,
 )
+from apps.portefeuille.services.notifications import notifier_recharge
 
 
 def _telephone(utilisateur, telephone: str) -> str:
@@ -60,7 +61,10 @@ def recharger(utilisateur, montant: int, moyen: str, telephone: str = "") -> Tra
         resultat = get_provider().collecter(utilisateur, montant, moyen, numero, str(ligne.id))
     except PaiementIndisponible as exc:
         with transaction.atomic():
-            transaction_repository.update(ligne, statut=S.ECHOUEE)
+            ligne = transaction_repository.get_verrouillee(ligne.id)
+            if ligne.statut != S.EN_ATTENTE:  # réponse perdue mais callback déjà traité
+                return ligne  # état réel renvoyé au client, l'erreur n'est pas relevée
+            ligne = transaction_repository.update(ligne, statut=S.ECHOUEE)
             journaliser(
                 "paiement.initier",
                 ressource=utilisateur,
@@ -70,11 +74,15 @@ def recharger(utilisateur, montant: int, moyen: str, telephone: str = "") -> Tra
             )
         raise
     with transaction.atomic():
+        ligne = transaction_repository.get_verrouillee(ligne.id)
+        if ligne.statut != S.EN_ATTENTE:  # déjà traitée par un callback pendant l'appel
+            return ligne
         ligne = transaction_repository.update(
             ligne, reference_externe=resultat.reference, statut=resultat.statut
         )
         action = "portefeuille.recharger" if resultat.statut == S.VALIDEE else "paiement.initier"
         journaliser(action, ressource=utilisateur, details=_details(ligne))
+        notifier_recharge(ligne)  # validée tout de suite (simulation) ; rien si en attente
     return ligne
 
 
@@ -103,6 +111,7 @@ def _actualiser(transaction_id, systeme: bool) -> Transaction:
             code_motif=resultat.code,
             details=_details(ligne),
         )
+        notifier_recharge(ligne)
     return ligne
 
 
@@ -121,8 +130,12 @@ def confirmer_par_callback(identifiant: str) -> None:
         _actualiser(ligne.id, systeme=True)
 
 
-def _abandonner(ligne: Transaction) -> None:
+def _abandonner(transaction_id) -> bool:
+    """Délai dépassé : la recharge échoue, sauf si elle a été traitée entre-temps (callback)."""
     with transaction.atomic():
+        ligne = transaction_repository.get_verrouillee(transaction_id)
+        if ligne.statut != S.EN_ATTENTE:  # validée (ou échouée) depuis la dernière vérification
+            return False
         ligne = transaction_repository.update(ligne, statut=S.ECHOUEE)
         journaliser(
             "paiement.confirmer",
@@ -132,6 +145,8 @@ def _abandonner(ligne: Transaction) -> None:
             code_motif="DELAI_DEPASSE",
             details=_details(ligne),
         )
+        notifier_recharge(ligne)
+    return True
 
 
 def verifier_paiements_en_attente() -> int:
@@ -143,6 +158,6 @@ def verifier_paiements_en_attente() -> int:
     for ligne in transaction_repository.recharges_expirees(limite):
         # Dernière vérification : un paiement confirmé tardivement n'est jamais perdu
         if _actualiser(ligne.id, systeme=True).statut == S.EN_ATTENTE:
-            _abandonner(ligne)
+            _abandonner(ligne.id)
         traites += 1
     return traites

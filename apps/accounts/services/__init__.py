@@ -1,3 +1,5 @@
+from apps.accounts.services.codes_email import CodeOtpInvalide
+from apps.accounts.services.connexion import EmailNonVerifie, connecter
 from apps.accounts.services.connexion_admin import (
     CompteNonAdmin,
     IdentifiantsInvalides,
@@ -7,18 +9,23 @@ from apps.accounts.services.connexion_admin import (
     rafraichir_admin,
 )
 from apps.accounts.services.etat import etat_profil
+from apps.accounts.services.inscription import (
+    EmailDejaUtilise,
+    inscrire,
+    renvoyer_code,
+    verifier_email,
+)
+from apps.accounts.services.jetons import JetonAutreCompte, deconnecter, emettre_jetons
 from apps.accounts.services.mot_de_passe import (
     LienReinitialisationInvalide,
     demander_reinitialisation,
     reinitialiser,
 )
-from apps.accounts.services.otp import (
-    CodeOtpInvalide,
-    CompteDesactive,
-    deconnecter,
-    demander_otp,
-    verifier_otp,
+from apps.accounts.services.mot_de_passe_oublie import (
+    demander_code_reinitialisation,
+    reinitialiser_par_code,
 )
+from apps.accounts.services.otp import CompteDesactive, demander_otp, verifier_otp
 from apps.accounts.services.profil import (
     ModeConducteurIndisponible,
     changer_mode,
@@ -38,6 +45,16 @@ from apps.accounts.services.suspension import (
 )
 
 __all__ = [
+    "EmailDejaUtilise",
+    "EmailNonVerifie",
+    "JetonAutreCompte",
+    "connecter",
+    "demander_code_reinitialisation",
+    "emettre_jetons",
+    "inscrire",
+    "reinitialiser_par_code",
+    "renvoyer_code",
+    "verifier_email",
     "SuppressionImpossible",
     "supprimer_compte",
     "LienReinitialisationInvalide",

@@ -34,6 +34,9 @@ class Trajet(BaseModel):
     # Instantané du calcul au moment de la publication (formule, paramètres, montants) : le
     # prix confirmé ne change jamais, même si un paramètre de tarification est modifié ensuite.
     tarification = models.JSONField(default=dict, blank=True)
+    # Tracé de la route {source, points [[lat, lng], …]} : affichage seulement, n'entre pas
+    # dans le prix (distance_km et duree_min restent calculés départ → arrivée).
+    trace = models.JSONField("tracé de la route", null=True, blank=True, default=None)
     statut = models.CharField(
         max_length=10, choices=StatutTrajet.choices, default=StatutTrajet.PUBLIE, db_index=True
     )

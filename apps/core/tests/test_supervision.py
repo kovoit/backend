@@ -40,23 +40,33 @@ def test_jamais_demarre_503(api_client):
     assert api_client.get(URL).status_code == 503
 
 
-def test_alerte_finance_retraits_en_attente(admin, passager, settings):
-    from django.contrib.auth.models import Group
-
-    from apps.accounts.tests.factories import UserFactory
+@pytest.fixture
+def retrait_ancien(passager, settings):
+    """Un retrait de 1 000 F en attente de versement (comme avec PayGate)."""
     from apps.portefeuille import services
-    from apps.portefeuille.tasks import alerter_retraits_en_attente
 
     settings.PAIEMENT_PROVIDER = "apps.portefeuille.paygate.PayGateProvider"
     settings.PAYGATE_CALLBACK_SECRET = "cle"
-    moderateur = UserFactory(is_staff=True)
-    moderateur.groups.set(Group.objects.filter(name="moderation"))
-    services.retirer(passager, 1000, "flooz")
+    return services.retirer(passager, 1000, "flooz")
+
+
+def test_alerte_finance_retraits_en_attente(retrait_ancien):
+    from apps.accounts.tests.factories import AdminFactory
+    from apps.portefeuille.tasks import alerter_retraits_en_attente
+
+    finance = AdminFactory(roles=["finance"])
+    superutilisateur = AdminFactory(is_superuser=True, roles=[])
+    exclus = [
+        AdminFactory(roles=["moderation"]),
+        AdminFactory(roles=[]),  # sans rôle : tableau de bord et paramètres seulement (D-36)
+        AdminFactory(roles=["finance"], is_active=False),
+    ]
     assert alerter_retraits_en_attente() == 0  # pas encore 24 h
 
     with freeze_time(timezone.now() + timedelta(hours=25)):
         assert alerter_retraits_en_attente() == 1
-    destinataires = [m.to[0] for m in mail.outbox]
-    assert admin.email in destinataires  # admin sans rôle : tous les domaines
-    assert moderateur.email not in destinataires  # Modération seulement
-    assert "1000 F CFA" in mail.outbox[0].body
+    alertes = [m for m in mail.outbox if "à verser" in m.subject]
+    destinataires = sorted(m.to[0] for m in alertes)
+    assert destinataires == sorted([finance.email, superutilisateur.email])
+    assert not {compte.email for compte in exclus} & set(destinataires)
+    assert "1000 F CFA" in alertes[0].body

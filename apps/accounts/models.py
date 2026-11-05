@@ -6,6 +6,9 @@ from django.db import models
 from apps.accounts.managers import UserManager
 from apps.core.models import BaseModel
 
+# Dernier filet, volontairement large : la règle togolaise (D-62) est appliquée à chaque
+# écriture par apps/core/telephone.py. Les anciens numéros illisibles, laissés tels quels par
+# la migration 0007, restent ainsi valides pour le Django admin.
 valider_telephone = RegexValidator(
     r"^\+?\d{8,15}$", "Numéro de téléphone invalide (8 à 15 chiffres, + facultatif)."
 )
@@ -63,10 +66,19 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         return bool(self.nom and self.prenom and self.telephone)
 
 
+class ObjetCode(models.TextChoices):
+    VERIFICATION_EMAIL = "verification_email", "Vérification de l'adresse e-mail"
+    REINITIALISATION = "reinitialisation", "Réinitialisation du mot de passe"
+
+
 class OtpCode(BaseModel):
-    """Code de connexion envoyé par email. Seul le hash est stocké."""
+    """Code à 6 chiffres envoyé par email. Seul le hash est stocké.
+
+    Un code ne sert qu'à son objet : un nouveau code n'annule que ceux du même objet (D-77).
+    """
 
     email = models.EmailField(db_index=True)
+    objet = models.CharField(max_length=20, choices=ObjetCode.choices)
     code_hash = models.CharField(max_length=128)
     expire_le = models.DateTimeField()
     essais = models.PositiveSmallIntegerField(default=0)
@@ -75,3 +87,4 @@ class OtpCode(BaseModel):
     class Meta(BaseModel.Meta):
         verbose_name = "code OTP"
         verbose_name_plural = "codes OTP"
+        indexes = [models.Index(fields=["email", "objet", "cree_le"])]

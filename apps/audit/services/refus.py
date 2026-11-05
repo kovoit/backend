@@ -19,8 +19,12 @@ CODES_SECURITE = {
     "CODE_DEPART_BLOQUE",
     "SESSION_EXPIREE",
     "ACCES_REFUSE",
+    "CANAL_WEB_REQUIS",
+    "JETON_AUTRE_COMPTE",
     "TROP_DE_REQUETES",
 }
+# Refus d'accès sans action métier propre : journalisés en `api.acces_refuse`
+CODES_ACCES_REFUSE = {"ACCES_REFUSE", "CANAL_WEB_REQUIS"}
 CODES_AUTHENTIFICATION = {"NON_AUTHENTIFIE", "AUTHENTIFICATION_ECHOUEE"}
 PREFIXE_ADMIN = "/api/v1/admin/"
 
@@ -58,7 +62,7 @@ def journaliser_erreur_api(code: str, http_status: int, metier: bool) -> None:
             code_motif=code,
             categorie=Categorie.SECURITE if code in CODES_SECURITE else None,
         )
-    elif code == "ACCES_REFUSE":
+    elif code in CODES_ACCES_REFUSE:
         journaliser_sans_bloquer(
             "api.acces_refuse", resultat=Resultat.REFUS, code_motif=code, details=lieu
         )

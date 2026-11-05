@@ -24,7 +24,7 @@ CHEMIN_COOKIE = "/api/v1/auth/admin/"
 
 
 class ConnexionAdminSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
     mot_de_passe = serializers.CharField(trim_whitespace=False)
 
 

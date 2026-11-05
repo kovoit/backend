@@ -17,7 +17,7 @@ MESSAGE_ENVOI = (
 
 
 class DemandeReinitialisationSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(max_length=254)
 
 
 class ReinitialisationSerializer(serializers.Serializer):

@@ -84,6 +84,11 @@ def lister_signalements(statut: str | None = None):
     return signalement_repository.lister(statut)
 
 
+def compter_signalements_ouverts() -> int:
+    """Badge du menu (D-28, D-41) : un litige garde son signalement ouvert, il compte une fois."""
+    return signalement_repository.compter(statut=StatutSignalement.OUVERT)
+
+
 def get_signalement(signalement_id) -> Signalement:
     return signalement_repository.get_by_id(signalement_id)
 

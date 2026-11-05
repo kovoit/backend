@@ -18,18 +18,24 @@ def appareil(utilisateur):
     return services.enregistrer_appareil(utilisateur, "fcm-abc", "android")
 
 
-def test_firebase_non_configure_push_journalise_et_email_envoye(settings, utilisateur, appareil):
+def test_firebase_non_configure_push_journalise_et_email_envoye(
+    settings, utilisateur, appareil, django_capture_on_commit_callbacks
+):
     settings.NOTIFICATIONS_PUSH_SENDER = "apps.notifications.push.JournalPushSender"
 
-    services.notifier(utilisateur, "Réservation acceptée", "Votre place est confirmée.")
+    with django_capture_on_commit_callbacks(execute=True):
+        services.notifier(utilisateur, "Réservation acceptée", "Votre place est confirmée.")
 
     assert [m.subject for m in mail.outbox] == ["Kovoit — Réservation acceptée"]
 
 
-def test_jeton_perime_supprime_et_email_de_secours(utilisateur, appareil):
+def test_jeton_perime_supprime_et_email_de_secours(
+    utilisateur, appareil, django_capture_on_commit_callbacks
+):
     FakePushSender.jetons_invalides = {"fcm-abc"}
     try:
-        services.notifier(utilisateur, "Bon trajet", "Prise en charge confirmée.")
+        with django_capture_on_commit_callbacks(execute=True):
+            services.notifier(utilisateur, "Bon trajet", "Prise en charge confirmée.")
     finally:
         FakePushSender.jetons_invalides = set()
 
@@ -37,11 +43,14 @@ def test_jeton_perime_supprime_et_email_de_secours(utilisateur, appareil):
     assert mail.outbox[-1].subject == "Kovoit — Bon trajet"
 
 
-def test_un_appareil_valide_suffit_pas_d_email(utilisateur, appareil):
+def test_un_appareil_valide_suffit_pas_d_email(
+    utilisateur, appareil, django_capture_on_commit_callbacks
+):
     services.enregistrer_appareil(utilisateur, "fcm-perime", "ios")
     FakePushSender.jetons_invalides = {"fcm-perime"}
     try:
-        services.notifier(utilisateur, "Bon trajet", "Prise en charge confirmée.")
+        with django_capture_on_commit_callbacks(execute=True):
+            services.notifier(utilisateur, "Bon trajet", "Prise en charge confirmée.")
     finally:
         FakePushSender.jetons_invalides = set()
 

@@ -20,6 +20,7 @@ class Action:
 ACTIONS: dict[str, Action] = {
     # Compte et session
     "compte.creer": Action("Création de compte", C.METIER, "utilisateur"),
+    "compte.verifier_email": Action("Vérification de l'adresse e-mail", C.SECURITE, "utilisateur"),
     "session.connecter": Action("Connexion", C.SECURITE, "utilisateur"),
     "session.deconnecter": Action("Déconnexion", C.SECURITE, "utilisateur"),
     "session.rafraichir": Action("Renouvellement de session", C.SECURITE, "utilisateur"),
@@ -105,6 +106,13 @@ ROUTES: dict[tuple[str, str], str] = {
     ("admin-signalement-traiter", "POST"): "signalement.traiter",
     ("admin-retrait-verser", "POST"): "portefeuille.verser",
     ("admin-retrait-refuser", "POST"): "portefeuille.verser",
+    ("inscription", "POST"): "compte.creer",
+    ("inscription-verifier", "POST"): "compte.verifier_email",
+    ("inscription-renvoyer-code", "POST"): "otp.demander",
+    ("connexion", "POST"): "session.connecter",
+    ("mot-de-passe-oublie", "POST"): "session.demander_reinitialisation",
+    ("mot-de-passe-reinitialiser", "POST"): "session.reinitialiser_mot_de_passe",
+    ("deconnexion", "POST"): "session.deconnecter",
     ("otp-demander", "POST"): "otp.demander",
     ("otp-verifier", "POST"): "session.connecter",
     ("jeton-rafraichir", "POST"): "session.rafraichir",

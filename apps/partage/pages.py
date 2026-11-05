@@ -16,8 +16,6 @@ from apps.reservations.models import StatutReservation as S
 ETATS = {
     S.ACCEPTEE: "Place confirmée, en attente du départ",
     S.EN_COURS: "En route",
-    S.TERMINEE: "Trajet terminé",
-    S.LITIGE: "Trajet terminé",
 }
 RAFRAICHIR_S = 30
 

@@ -5,11 +5,11 @@ bloque      = blocage − deblocage                                    repositor
 disponible  = solde_total − bloque
 """
 
-import re
 from dataclasses import dataclass
 
 from apps.accounts.repository import user_repository
 from apps.core.exceptions import Conflit, DonneesInvalides
+from apps.core.telephone import chiffres_locaux
 from apps.portefeuille.models import MoyenPaiement, StatutTransaction
 from apps.portefeuille.models import TypeTransaction as T
 from apps.portefeuille.repository import transaction_repository
@@ -30,16 +30,13 @@ def verifier_moyen(moyen: str) -> None:
 
 
 def numero_mobile_money(numero: str) -> str:
-    """Numéro togolais à 8 chiffres (ex. 90123456) : espaces et indicatif +228 / 00228 retirés."""
-    chiffres = re.sub(r"\D", "", numero or "")
-    if len(chiffres) > 8 and chiffres.startswith(("00228", "228")):
-        chiffres = chiffres.removeprefix("00").removeprefix("228")
-    if len(chiffres) != 8:
-        raise DonneesInvalides(
-            "Numéro Mobile Money togolais invalide (8 chiffres, ex. 90 12 34 56).",
-            code="TELEPHONE_INVALIDE",
-        )
-    return chiffres
+    """Format attendu par PayGate : 8 chiffres (ex. 90123456), quelle que soit la saisie ou la
+    forme du profil (+228XXXXXXXX). Règle partagée : apps/core/telephone.py."""
+    return chiffres_locaux(
+        numero,
+        "Numéro Mobile Money invalide : saisissez un numéro mobile togolais à 8 chiffres "
+        "commençant par 7 ou 9 (ex. 90 11 22 33).",
+    )
 
 
 @dataclass

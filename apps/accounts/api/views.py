@@ -77,14 +77,16 @@ class DeconnexionVue(APIView):
 
     @extend_schema(
         tags=[TAG_AUTH],
-        summary="Se déconnecter",
+        summary="Se déconnecter (révoque le refresh de cet appareil)",
+        description="400 JETON_INVALIDE ; 403 JETON_AUTRE_COMPTE : le refresh appartient à un "
+        "autre compte (il n'est pas révoqué).",
         request=s.RefreshSerializer,
         responses={200: None},
     )
     def post(self, request):
         entree = s.RefreshSerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        services.deconnecter(entree.validated_data["refresh"])
+        services.deconnecter(request.user, entree.validated_data["refresh"])
         return succes("Déconnexion effectuée.")
 
 

@@ -5,6 +5,11 @@ from apps.confiance.api import admin_views as views
 urlpatterns = [
     path("signalements/", views.SignalementAdminListeVue.as_view(), name="admin-signalements"),
     path(
+        "signalements/compteur/",
+        views.SignalementCompteurVue.as_view(),
+        name="admin-signalements-compteur",
+    ),
+    path(
         "signalements/<uuid:pk>/",
         views.SignalementAdminDetailVue.as_view(),
         name="admin-signalement-detail",

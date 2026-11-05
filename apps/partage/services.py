@@ -8,9 +8,8 @@ from apps.partage.models import LienPartage
 from apps.partage.repository import lien_repository
 from apps.reservations.models import StatutReservation as S
 
+# Création et lecture du lien : il cesse d'être valide dès l'arrivée (D-05)
 STATUTS_PARTAGEABLES = {S.ACCEPTEE, S.EN_COURS}
-# Le lien reste lisible jusqu'à la clôture
-STATUTS_VISIBLES = {S.ACCEPTEE, S.EN_COURS, S.TERMINEE, S.LITIGE}
 
 
 def creer_lien(passager, reservation_id) -> LienPartage:
@@ -35,6 +34,6 @@ def creer_lien(passager, reservation_id) -> LienPartage:
 
 def consulter(jeton: str) -> LienPartage:
     lien = lien_repository.get_par_jeton(jeton)
-    if lien.reservation.statut not in STATUTS_VISIBLES:
+    if lien.reservation.statut not in STATUTS_PARTAGEABLES:
         raise RessourceIntrouvable("Lien de partage invalide ou expiré.")
     return lien

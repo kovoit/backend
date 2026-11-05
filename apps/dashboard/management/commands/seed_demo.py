@@ -2,6 +2,7 @@
 
 Crée (sans doublon si relancée) un passager et un conducteur déjà vérifiés, un véhicule,
 un trajet publié pour demain, et affiche des jetons JWT prêts à coller dans « Authorize ».
+Les deux comptes se connectent aussi par e-mail + mot de passe `DEMO_MOT_DE_PASSE`.
 Pour remplir le back-office React avec un mois d'activité, utiliser plutôt `seed_backoffice`.
 """
 
@@ -13,6 +14,8 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.repository import user_repository
+from apps.core.telephone import normaliser_telephone
+from apps.dashboard.demo import DEMO_MOT_DE_PASSE
 from apps.kyc.models import StatutKyc, TypeDossier
 from apps.kyc.repository import dossier_repository
 from apps.portefeuille import services as portefeuille
@@ -35,7 +38,10 @@ CONDUCTEUR = {
 
 
 class Command(BaseCommand):
-    help = "Crée des comptes et un trajet de démonstration (DEBUG uniquement)."
+    help = (
+        "Crée des comptes et un trajet de démonstration (DEBUG uniquement). "
+        f"Mot de passe des comptes : {DEMO_MOT_DE_PASSE}"
+    )
 
     def handle(self, *args, **options):
         if not settings.DEBUG:
@@ -59,7 +65,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Données de démonstration prêtes.\n"))
         for role, utilisateur in (("PASSAGER", passager), ("CONDUCTEUR", conducteur)):
             jetons = RefreshToken.for_user(utilisateur)
-            self.stdout.write(f"{role} : {utilisateur.email}")
+            self.stdout.write(f"{role} : {utilisateur.email} / {DEMO_MOT_DE_PASSE}")
             self.stdout.write(f"  access  : {jetons.access_token}")
             self.stdout.write(f"  refresh : {jetons}\n")
         point = trajet.points.first()
@@ -75,7 +81,11 @@ class Command(BaseCommand):
     def _compte(self, donnees: dict, dossiers: list[str]):
         utilisateur, _ = user_repository.get_ou_creer(donnees["email"])
         champs = {k: v for k, v in donnees.items() if k != "email"}
-        utilisateur = user_repository.update(utilisateur, email_verifie=True, **champs)
+        champs["telephone"] = normaliser_telephone(champs["telephone"])
+        utilisateur = user_repository.update(utilisateur, **champs)
+        utilisateur = user_repository.changer_mot_de_passe(
+            utilisateur, DEMO_MOT_DE_PASSE, email_verifie=True
+        )
         for type_dossier in dossiers:
             dossier = dossier_repository.get_ou_creer(utilisateur, type_dossier)
             dossier_repository.update(dossier, statut=StatutKyc.VERIFIE)

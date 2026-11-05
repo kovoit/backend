@@ -88,12 +88,8 @@ CACHES = {"default": env.cache("CACHE_URL", default="locmemcache://")}
 
 # Authentification
 AUTH_USER_MODEL = "accounts.User"
-AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-]
+# Validateurs des mots de passe (similarité sur email, prénom et nom) : voir le module
+from kovoit.reglages_mots_de_passe import AUTH_PASSWORD_VALIDATORS  # noqa: E402, F401
 
 # Langue et fuseau
 LANGUAGE_CODE = "fr-fr"
@@ -135,7 +131,12 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "60/min", "user": "300/min", "connexion_admin": "5/min"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/min",
+        "user": "300/min",
+        "connexion_admin": "5/min",
+        "connexion": "5/min",  # auth/connexion/ de l'application, par IP
+    },
 }
 
 SIMPLE_JWT = {

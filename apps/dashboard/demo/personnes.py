@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw
 
 from apps.accounts import services as comptes
 from apps.accounts.repository import user_repository
+from apps.dashboard.demo import DEMO_MOT_DE_PASSE
 from apps.kyc import services as kyc
 from apps.kyc.models import TypePiece
 from apps.vehicules import services as vehicules
@@ -47,7 +48,7 @@ def _slug(valeur: str) -> str:
     return sans_accents.lower()
 
 
-def _image(titre: str, titulaire: str) -> SimpleUploadedFile:
+def image_fictive(titre: str, titulaire: str) -> SimpleUploadedFile:
     """Pièce fictive lisible dans la visionneuse du back-office."""
     image = Image.new("RGB", (640, 400), "#EFF3F9")
     dessin = ImageDraw.Draw(image)
@@ -71,7 +72,9 @@ def email_de(index: int) -> str:
 
 def creer_personne(index: int):
     prenom, nom = _identite(index)
-    utilisateur = user_repository.creer(email_de(index), email_verifie=True)
+    utilisateur = user_repository.creer(
+        email_de(index), password=DEMO_MOT_DE_PASSE, email_verifie=True
+    )
     return comptes.modifier_profil(
         utilisateur, nom=nom, prenom=prenom, telephone=f"+2289{index:07d}"
     )
@@ -94,7 +97,7 @@ def soumettre_dossier(utilisateur, type_dossier: str):
     titulaire = f"{utilisateur.prenom} {utilisateur.nom}"
     for type_piece in PIECES[type_dossier]:
         titre = TypePiece(type_piece).label
-        kyc.ajouter_piece(utilisateur, type_dossier, type_piece, _image(titre, titulaire))
+        kyc.ajouter_piece(utilisateur, type_dossier, type_piece, image_fictive(titre, titulaire))
     return kyc.soumettre(utilisateur, type_dossier)
 
 

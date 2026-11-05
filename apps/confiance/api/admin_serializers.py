@@ -48,3 +48,9 @@ class TraitementAdminSerializer(serializers.Serializer):
         default="",
         help_text="Obligatoire si la réservation est en litige.",
     )
+
+
+class CompteurSignalementsSerializer(serializers.Serializer):
+    """Badge du menu « Signalements & litiges » (F-062)."""
+
+    signalements_ouverts = serializers.IntegerField(min_value=0)

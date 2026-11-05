@@ -21,9 +21,12 @@ def test_notification_conservee_meme_sans_telephone(client_utilisateur, utilisat
     assert client_utilisateur.get(f"{URL}non-lues/").json()["reponse"]["nombre"] == 1
 
 
-def test_le_push_porte_l_identifiant_de_la_notification(client_utilisateur, utilisateur):
+def test_le_push_porte_l_identifiant_de_la_notification(
+    client_utilisateur, utilisateur, django_capture_on_commit_callbacks
+):
     services.enregistrer_appareil(utilisateur, "jeton-1", "android")
-    services.notifier(utilisateur, "Titre", "Message")
+    with django_capture_on_commit_callbacks(execute=True):
+        services.notifier(utilisateur, "Titre", "Message")
 
     identifiant = client_utilisateur.get(URL).json()["reponse"]["results"][0]["id"]
     assert FakePushSender.envoyes[-1]["donnees"]["notification_id"] == identifiant

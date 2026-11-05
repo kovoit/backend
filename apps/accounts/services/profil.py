@@ -5,6 +5,7 @@ from apps.accounts.models import ModeActif, StatutCompte, User
 from apps.accounts.repository import user_repository
 from apps.audit.services import journaliser
 from apps.core.exceptions import ActionInterdite
+from apps.core.telephone import normaliser_telephone
 
 CHAMPS_MODIFIABLES = {"nom", "prenom", "telephone", "photo"}
 
@@ -26,6 +27,8 @@ def modifier_profil(utilisateur: User, *, accepter_cgu: bool = False, **champs) 
     from apps.accounts.cgu import CGU_VERSION
 
     donnees = {cle: valeur for cle, valeur in champs.items() if cle in CHAMPS_MODIFIABLES}
+    if "telephone" in donnees:  # D-51 : le backend normalise (+228XXXXXXXX) ou refuse
+        donnees["telephone"] = normaliser_telephone(donnees["telephone"])
     if accepter_cgu and utilisateur.cgu_version != CGU_VERSION:
         with transaction.atomic():
             utilisateur = user_repository.update(

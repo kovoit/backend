@@ -4,7 +4,11 @@ from apps.core.models import BaseModel
 
 
 class LienPartage(BaseModel):
-    """Lien public « Partager mon trajet », valable jusqu'à la clôture de la réservation."""
+    """Lien public « Partager mon trajet ».
+
+    Valable jusqu'à l'arrivée, c'est-à-dire tant que la réservation est `acceptee` ou
+    `en_cours` (D-05).
+    """
 
     reservation = models.OneToOneField(
         "reservations.Reservation", on_delete=models.CASCADE, related_name="lien_partage"

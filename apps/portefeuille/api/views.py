@@ -22,15 +22,20 @@ MESSAGES = {
     "en_attente": "Validez le paiement sur votre téléphone pour terminer l'opération.",
     "echouee": "Le paiement n'a pas abouti.",
 }
+# D-57 : une recharge peut revenir échouée (callback d'échec reçu pendant l'appel PayGate).
+CODES_HTTP_RECHARGE = {"validee": 201, "en_attente": 202, "echouee": 200}
 MESSAGE_RETRAIT_EN_ATTENTE = (
     "Retrait enregistré : Kovoit effectue le versement sur votre compte Mobile Money."
 )
 
 
-def _resultat(request, ligne):
-    """201 : opération validée ; 202 : en attente de confirmation Mobile Money."""
+def _resultat(request, ligne, codes_http: dict[str, int] | None = None):
+    """Par défaut 201 : opération validée ; 202 : en attente de confirmation Mobile Money."""
     donnees = {"transaction": ligne, "solde": services.solde(request.user)}
-    statut = 201 if ligne.statut == "validee" else 202
+    if codes_http is None:
+        statut = 201 if ligne.statut == "validee" else 202
+    else:
+        statut = codes_http[ligne.statut]
     message = MESSAGES[ligne.statut]
     if ligne.type == "retrait" and ligne.statut == "en_attente":
         message = MESSAGE_RETRAIT_EN_ATTENTE
@@ -80,13 +85,19 @@ class RechargerVue(APIView):
     @extend_schema(
         tags=[TAG],
         summary="Recharger par Flooz ou Mixx (PayGate, ou simulation sans jeton marchand)",
+        description="201 : recharge validée ; 202 : en attente ; 200 : paiement échoué.",
         request=OperationMobileMoneySerializer,
-        responses={201: ResultatOperationSerializer, 202: ResultatOperationSerializer},
+        responses={
+            200: ResultatOperationSerializer,
+            201: ResultatOperationSerializer,
+            202: ResultatOperationSerializer,
+        },
     )
     def post(self, request):
         entree = OperationMobileMoneySerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        return _resultat(request, services.recharger(request.user, **entree.validated_data))
+        ligne = services.recharger(request.user, **entree.validated_data)
+        return _resultat(request, ligne, CODES_HTTP_RECHARGE)
 
 
 class RetirerVue(APIView):

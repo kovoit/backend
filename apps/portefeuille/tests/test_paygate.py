@@ -16,35 +16,6 @@ pytestmark = pytest.mark.django_db
 CALLBACK = "/api/v1/paiements/paygate/callback/"
 
 
-class FauxPayGate:
-    """Remplace paygate._appeler : enregistre les appels, répond selon `statut_paiement`."""
-
-    def __init__(self):
-        self.appels = []
-        self.statut_paiement = 2  # en cours
-        self.statut_initiation = 0
-
-    def __call__(self, chemin, donnees):
-        self.appels.append((chemin, donnees))
-        if chemin == "/api/v1/pay":
-            return {"tx_reference": "PG-123", "status": self.statut_initiation}
-        return {
-            "tx_reference": "PG-123",
-            "payment_reference": "FLZ-789",
-            "status": self.statut_paiement,
-        }
-
-
-@pytest.fixture
-def paygate(settings, monkeypatch):
-    settings.PAIEMENT_PROVIDER = "apps.portefeuille.paygate.PayGateProvider"
-    settings.PAYGATE_AUTH_TOKEN = "jeton-marchand-secret"
-    settings.PAYGATE_CALLBACK_SECRET = "cle-callback"
-    faux = FauxPayGate()
-    monkeypatch.setattr("apps.portefeuille.paygate._appeler", faux)
-    return faux
-
-
 def test_recharge_en_attente_puis_confirmee(utilisateur, paygate):
     ligne = services.recharger(utilisateur, 2000, "mixx", "+22890000001")
 
@@ -88,9 +59,17 @@ def test_le_callback_ne_suffit_pas_a_crediter(api_client, utilisateur, paygate):
 def test_callback_sans_la_bonne_cle_ignore(api_client, utilisateur, paygate):
     ligne = services.recharger(utilisateur, 2000, "flooz")
     paygate.statut_paiement = 0
+    appels = len(paygate.appels)
 
-    api_client.post(f"{CALLBACK}?cle=mauvaise", {"identifier": str(ligne.id)})
+    reponse = api_client.post(f"{CALLBACK}?cle=mauvaise", {"identifier": str(ligne.id)})
 
+    assert reponse.status_code == 200
+    assert (reponse.json()["statut"], reponse.json()["message"]) == (
+        "success",
+        "Notification ignorée.",
+    )
+    assert len(paygate.appels) == appels  # PayGate n'est même pas interrogé
+    assert not EvenementAudit.objects.filter(action="paiement.confirmer").exists()
     assert Transaction.objects.get(id=ligne.id).statut == "en_attente"
 
 

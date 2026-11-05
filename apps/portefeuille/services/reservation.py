@@ -1,5 +1,6 @@
 """Mouvements liés à une réservation (appelés dans la transaction du service réservation)."""
 
+from apps.core.telephone import lire_chiffres
 from apps.portefeuille.models import MoyenPaiement
 from apps.portefeuille.models import TypeTransaction as T
 from apps.portefeuille.provider import get_provider
@@ -12,6 +13,14 @@ from apps.portefeuille.services.commun import (
     verifier_moyen,
     verrouiller,
 )
+
+
+def _numero_fournisseur(telephone: str) -> str:
+    """Format du fournisseur (8 chiffres), comme la recharge et le retrait. Un ancien numéro
+    illisible (D-63) est transmis tel quel, sans erreur : ce chemin n'est atteint qu'avec un
+    paiement immédiat (la simulation, qui ignore le numéro) ; un fournisseur réel refuserait
+    lui-même un numéro inexploitable."""
+    return lire_chiffres(telephone) or telephone
 
 
 def bloquer(reservation, moyen: str | None = None) -> int:
@@ -40,9 +49,8 @@ def bloquer(reservation, moyen: str | None = None) -> int:
     if complement:
         verifier_moyen(moyen)
         identifiant = f"resa-{reservation.id}"
-        resultat = fournisseur.collecter(
-            passager, complement, moyen, passager.telephone, identifiant
-        )
+        numero = _numero_fournisseur(passager.telephone)
+        resultat = fournisseur.collecter(passager, complement, moyen, numero, identifiant)
         ecrire(passager, T.RECHARGE, complement, reservation, resultat.reference, moyen)
     ecrire(passager, T.BLOCAGE, reservation.montant_total, reservation)
     return complement

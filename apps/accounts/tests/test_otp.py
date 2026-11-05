@@ -122,10 +122,10 @@ def test_compte_desactive_refuse(utilisateur):
 def test_deconnexion_invalide_le_refresh(utilisateur):
     refresh = str(RefreshToken.for_user(utilisateur))
 
-    services.deconnecter(refresh)
+    services.deconnecter(utilisateur, refresh)
 
     with pytest.raises(DonneesInvalides):
-        services.deconnecter(refresh)
+        services.deconnecter(utilisateur, refresh)
 
 
 def test_code_otp_valable_selon_le_parametre():

@@ -1,8 +1,11 @@
+from dataclasses import asdict
+
 from django.db import transaction
 from django.utils import timezone
 
 from apps.audit.services import journaliser
 from apps.core.exceptions import DonneesInvalides
+from apps.routage.services import trace
 from apps.tarification.services import Devis, devis_trajet
 from apps.trajets.models import Trajet
 from apps.trajets.repository import point_repository, trajet_repository
@@ -50,6 +53,16 @@ def publier(
         arrivee=(arrivee_lat, arrivee_lng),
         places=places,
     )
+    # Tracé par les carrefours (affichage seulement : le prix reste calculé départ → arrivée).
+    # Itinéraire déjà en estimation : on ne relance pas le service de routage.
+    route = trace(
+        [
+            (depart_lat, depart_lng),
+            *[(p["lat"], p["lng"]) for p in points],
+            (arrivee_lat, arrivee_lng),
+        ],
+        essayer_routage=devis.source_itineraire == "routage",
+    )
     vehicule = vehicule_repository.get_de(conducteur, vehicule_id)
     with transaction.atomic():
         trajet = trajet_repository.create(
@@ -68,6 +81,7 @@ def publier(
             duree_min=devis.duree_min,
             prix_place=devis.prix_place,
             tarification=devis.instantane(),
+            trace=asdict(route),
         )
         point_repository.creer_pour(trajet, points)
         journaliser(
@@ -85,6 +99,7 @@ def publier(
                 "net_conducteur_place": devis.net_conducteur_place,
                 "formule_version": devis.formule_version,
                 "source_itineraire": devis.source_itineraire,
+                "source_trace": route.source,
             },
         )
     return trajet_repository.get_by_id(trajet.id)
