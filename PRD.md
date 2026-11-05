@@ -20,7 +20,7 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 
 | Sujet | Spec d'origine | Décision MVP |
 |---|---|---|
-| Vérification du compte | OTP par SMS | **OTP par email via Gmail SMTP**. Téléphone obligatoire mais non vérifié |
+| Authentification | OTP par SMS | **Inscription et connexion par email + mot de passe** (décision du 30/10/2026, remplace la connexion par code seul du 10/10). L'email est vérifié une fois, à l'inscription, par un **code à 6 chiffres envoyé via Gmail SMTP** ; « Mot de passe oublié » par le même type de code. Téléphone obligatoire mais non vérifié. Pas de connexion Google |
 | Notifications | Push, SMS si app fermée | Push, **email** si app fermée |
 | Tarification | Grille 200 / 300 / 500 F par tranche | **À définir plus tard** — prix temporaire = paramètre `prix_simulation` |
 | Paiement | Espèces ou portefeuille | **Portefeuille** alimenté par **PayGate Global** (Flooz, Mixx) ; **pas d'espèces** (décision du 22/10/2026). Sans jeton marchand : simulation |
@@ -31,7 +31,8 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 ## 3. Rôles et fonctionnalités
 
 ### Passager
-- Créer un compte (email + OTP), renseigner téléphone, nom, prénom, photo.
+- Créer un compte (nom, prénom, email, téléphone, mot de passe, acceptation des CGU), vérifier son email par code à 6 chiffres ; ajouter sa photo.
+- Se connecter par email + mot de passe ; réinitialiser son mot de passe par code email ; se déconnecter.
 - Soumettre son KYC passager.
 - Chercher un trajet : départ, arrivée, date, heure.
 - Voir le profil du conducteur : statut vérifié, note moyenne, taux de fiabilité, véhicule.
@@ -61,7 +62,13 @@ Kovoit met en relation des conducteurs qui font **déjà** un trajet en ville à
 ## 4. Compte, authentification et KYC
 
 **Authentification**
-- **Application mobile** (passagers, conducteurs) : email + code OTP à 6 chiffres envoyé par Gmail SMTP → JWT. Code haché, durée de vie, essais et renvois limités par paramètres.
+- **Application mobile** (passagers, conducteurs) — décision du 30/10/2026 :
+  1. **Inscription** : nom, prénom, email, téléphone (+228), mot de passe, acceptation des CGU et de la politique de confidentialité. Le compte est créé avec `email_verifie = false` et un code à 6 chiffres est envoyé à l'email (Gmail SMTP).
+  2. **Vérification de l'email** : le bon code avant expiration → `email_verifie = true` et JWT (access + refresh). Renvoi possible après `otp_delai_renvoi_s`.
+  3. **Connexion** : email + mot de passe → JWT. Email pas encore vérifié → `403 EMAIL_NON_VERIFIE` et un nouveau code est envoyé ; l'application ouvre l'écran de vérification.
+  4. **Mot de passe oublié** : l'utilisateur saisit son email, reçoit un code à 6 chiffres, puis saisit le code et un nouveau mot de passe. La réponse à la demande est identique que le compte existe ou non (pas d'énumération des comptes). Une réinitialisation révoque tous les refresh tokens du compte.
+  - Règles : email unique (insensible à la casse) ; mot de passe haché par Django, validé par les validateurs Django (8 caractères minimum, pas trop courant, pas entièrement numérique) → sinon `MOT_DE_PASSE_FAIBLE` ; codes hachés, à usage unique, rattachés à un objet (`verification_email` ou `reinitialisation`), durée de vie, essais et renvois limités par les paramètres `otp_*` ; connexions échouées limitées (`TROP_DE_REQUETES`) ; compte suspendu → connexion acceptée, actions bloquées (règles d'accès ci-dessous).
+  - Le code email à 6 chiffres ne sert qu'à vérifier l'adresse et à réinitialiser le mot de passe ; il est distinct du code de départ à 4 chiffres.
 - **Back-office React** (administrateurs `is_staff` uniquement) : email + mot de passe → JWT (`/auth/admin/connexion/`). Un compte non administrateur est refusé (`COMPTE_NON_ADMIN`).
 
 **KYC (validation manuelle par l'admin)**
@@ -181,8 +188,8 @@ Au-delà de `seuil_incidents` incidents sur 30 jours : suspension de `duree_susp
 
 | Table | Champs principaux |
 |---|---|
-| `users` | id, email (unique), telephone, nom, prenom, photo, email_verifie, mode_actif (passager, conducteur), statut_compte (actif, suspendu), suspendu_jusqu_au, cree_le |
-| `otp_codes` | id, email, code_hash, expire_le, essais, utilise, cree_le |
+| `users` | id, email (unique), password (haché par Django), telephone, nom, prenom, photo, email_verifie, cgu_acceptees_le, mode_actif (passager, conducteur), statut_compte (actif, suspendu), suspendu_jusqu_au, cree_le |
+| `otp_codes` | id, email, objet (verification_email, reinitialisation), code_hash, expire_le, essais, utilise, cree_le |
 | `kyc_dossiers` | id, user_id, type (passager, conducteur), statut, motif_rejet, soumis_le, traite_le, traite_par |
 | `kyc_pieces` | id, dossier_id, type_piece (identite, selfie, permis, carte_grise, assurance, photo_vehicule), fichier privé |
 | `kyc_consultations` | id, piece_id, admin_id, consulte_le |
@@ -211,16 +218,18 @@ Au-delà de `seuil_incidents` incidents sur 30 jours : suspension de `duree_susp
 | `seuil_incidents` | 3 | Suspension |
 | `periode_incidents_j` | 30 | Période de calcul de la fiabilité et des incidents |
 | `duree_suspension_j` | 7 | Suspension |
-| `otp_validite_min` | 10 | OTP email |
-| `otp_max_essais` | 5 | OTP email |
-| `otp_delai_renvoi_s` | 60 | OTP email |
-| `otp_max_par_heure` | 5 | OTP email |
+| `otp_validite_min` | 10 | Code email (vérification, mot de passe oublié) |
+| `otp_max_essais` | 5 | Code email |
+| `otp_delai_renvoi_s` | 60 | Code email |
+| `otp_max_par_heure` | 5 | Code email |
 | `code_depart_max_essais` | 5 | Code de départ |
 | `recharge_min` / `retrait_min` | 500 F | Portefeuille simulé |
 
 ## 12. Critères d'acceptation
 
-- **CA1 Inscription :** étant donné un email valide, quand l'utilisateur demande un code, alors un OTP est envoyé par email ; quand il saisit le bon code avant expiration, alors son email est vérifié et il reçoit un JWT. Au-delà de `otp_max_essais`, le code est invalidé.
+- **CA1 Inscription :** étant donné un email encore inutilisé et un mot de passe conforme, quand l'utilisateur s'inscrit, alors le compte est créé avec `email_verifie = false` et un code est envoyé par email ; quand il saisit le bon code avant expiration, alors son email est vérifié et il reçoit un JWT. Email déjà utilisé → `EMAIL_DEJA_UTILISE` ; mot de passe refusé → `MOT_DE_PASSE_FAIBLE`. Au-delà de `otp_max_essais`, le code est invalidé.
+- **CA1 bis Connexion :** email vérifié + bon mot de passe → JWT ; mauvais email ou mot de passe → `401 IDENTIFIANTS_INVALIDES` (même message dans les deux cas) ; email non vérifié → `403 EMAIL_NON_VERIFIE` et nouveau code envoyé ; trop d'échecs → `429 TROP_DE_REQUETES`.
+- **CA1 ter Mot de passe oublié :** la demande renvoie toujours la même réponse ; pour un compte existant, un code est envoyé ; le bon code + un mot de passe conforme remplacent le mot de passe, invalident le code et révoquent les refresh tokens ; l'ancien mot de passe ne fonctionne plus.
 - **CA2 KYC :** quand l'utilisateur soumet ses pièces, le dossier passe `en_attente` ; l'admin le passe `verifie` ou `rejete` (motif obligatoire) ; un dossier rejeté peut être resoumis. Chaque consultation de pièce est journalisée.
 - **CA3 Publication :** un conducteur sans KYC conducteur `verifie` ou sans véhicule reçoit `403`. Sinon le trajet est créé `publie` avec `places_restantes = places`, 1 à 3 points, places ≤ nb_places − 1.
 - **CA4 Recherche :** un utilisateur à email vérifié obtient les trajets respectant rayons, fenêtre horaire et places ≥ 1, triés par heure puis distance de marche, avec conducteur, photo, statut vérifié, note, fiabilité, véhicule, heure, places, prix.
@@ -236,7 +245,7 @@ Au-delà de `seuil_incidents` incidents sur 30 jours : suspension de `duree_susp
 
 ## 13. Hors périmètre MVP
 
-Algorithme de prix définitif, versement automatique des retraits, passagers pris n'importe où sur l'itinéraire, trajets récurrents, messagerie, KYC automatique / OCR, offre entreprises et écoles, abonnement conducteur, trajets interurbains, vérification du téléphone par SMS.
+Algorithme de prix définitif, versement automatique des retraits, passagers pris n'importe où sur l'itinéraire, trajets récurrents, messagerie, KYC automatique / OCR, offre entreprises et écoles, abonnement conducteur, trajets interurbains, vérification du téléphone par SMS, connexion Google ou autre fournisseur externe.
 
 ## 14. Questions ouvertes
 
@@ -252,7 +261,7 @@ Préfixe `/api/v1/`. Toutes les réponses : `{ "statut": "success" | "failed", "
 
 | Domaine | Endpoints |
 |---|---|
-| Authentification | `POST auth/otp/demander/` · `POST auth/otp/verifier/` · `POST auth/jeton/rafraichir/` · `POST auth/deconnexion/` |
+| Authentification | **À implémenter (décision du 30/10/2026)** : `POST auth/inscription/` · `POST auth/inscription/verifier/` · `POST auth/inscription/renvoyer-code/` · `POST auth/connexion/` · `POST auth/mot-de-passe/oublie/` · `POST auth/mot-de-passe/reinitialiser/`. Conservés : `POST auth/jeton/rafraichir/` · `POST auth/deconnexion/`. Remplacés, à retirer une fois le mobile migré : `POST auth/otp/demander/` · `POST auth/otp/verifier/` |
 | Authentification back-office | `POST auth/admin/connexion/` · `POST auth/admin/jeton/rafraichir/` · `POST auth/admin/deconnexion/` · `GET auth/admin/moi/` |
 | Profil | `GET/PATCH moi/` · `PATCH moi/mode/` · `GET moi/economies/` · `GET utilisateurs/{id}/` |
 | KYC | `GET kyc/` · `POST kyc/{type}/pieces/` · `POST kyc/{type}/soumettre/` |
