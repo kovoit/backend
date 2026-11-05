@@ -17,4 +17,5 @@ RUN mkdir -p /app/prive /app/media && useradd --create-home --uid 1000 kovoit &&
 USER kovoit
 
 EXPOSE 8000
-CMD ["gunicorn", "kovoit.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# PROCESSUS=web (défaut), worker ou beat : voir scripts/demarrer.sh
+CMD ["sh", "scripts/demarrer.sh"]
