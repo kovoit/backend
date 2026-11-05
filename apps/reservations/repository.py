@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.db.models.functions import TruncDate
 
 from apps.core.repository import BaseRepository
@@ -146,6 +146,14 @@ class ReservationRepository(BaseRepository[Reservation]):
             .values_list("statut", "total")
         )
         return dict(lignes)
+
+    def reculer_horodatages(self, trajet_id, delta: timedelta) -> None:
+        """Outil de dev (avancer_trajet) : recule de `delta` la création et chaque changement de
+        statut des réservations du trajet (un horodatage vide reste vide)."""
+        champs = ["cree_le", *HORODATAGES.values()]
+        self.model.objects.filter(trajet_id=trajet_id).update(
+            **{champ: F(champ) - delta for champ in champs}
+        )
 
 
 reservation_repository = ReservationRepository()

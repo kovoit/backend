@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
 from django.db.models.functions import TruncDate
 
 from apps.core.repository import BaseRepository
@@ -103,6 +103,21 @@ class TrajetRepository(BaseRepository[Trajet]):
 
     def compter(self, **filtres) -> int:
         return self.model.objects.filter(**filtres).count()
+
+    def dernier_non_clos(self) -> Trajet | None:
+        """Outil de dev : trajet publié, complet ou en cours créé le plus récemment."""
+        return self.non_clos().order_by("-cree_le").first()
+
+    def non_clos(self):
+        return self.filter(
+            statut__in=[StatutTrajet.PUBLIE, StatutTrajet.COMPLET, StatutTrajet.EN_COURS]
+        )
+
+    def reculer_horaires(self, trajet_id, delta: timedelta) -> None:
+        """Outil de dev (avancer_trajet) : recule le départ et la dernière position de `delta`."""
+        self.model.objects.filter(pk=trajet_id).update(
+            depart_le=F("depart_le") - delta, position_le=F("position_le") - delta
+        )
 
     def termines_par_jour(self, debut: datetime, fin: datetime) -> dict[date, int]:
         """Trajets terminés par jour de départ (heure de Lomé)."""
