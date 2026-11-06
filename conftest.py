@@ -34,6 +34,12 @@ def reglages_de_test(settings, tmp_path):
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
     settings.PRIVATE_MEDIA_ROOT = str(tmp_path / "prive")
     settings.MEDIA_ROOT = str(tmp_path / "media")
+    # Photos sur le disque même si .env renseigne CLOUDINARY_URL : aucun envoi réel en test
+    settings.CLOUDINARY_URL = ""
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    }
     settings.ROUTAGE_PROVIDER = "apps.routage.providers.FakeRoutingProvider"
     settings.NOTIFICATIONS_PUSH_SENDER = "apps.notifications.push.FakePushSender"
     # Namespace « CELERY » : les clés de configuration portent le préfixe

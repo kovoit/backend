@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.conf import global_settings
 
 from apps.core.api.schema import REGLAGES_SPECTACULAR
 
@@ -192,3 +193,8 @@ if not DEBUG:  # sécurité : actif dès que DEBUG est désactivé (production)
     # HSTS preload volontairement désactivé : l'inscription du domaine dans les
     # navigateurs est quasi irréversible. À activer quand le domaine sera définitif.
     SILENCED_SYSTEM_CHECKS = ["security.W021"]
+
+CLOUDINARY_URL = env("CLOUDINARY_URL", default="")  # photos sur Cloudinary ; KYC sur le serveur
+if CLOUDINARY_URL:
+    _PHOTOS = {"BACKEND": "apps.core.stockage.StockageCloudinary"}
+    STORAGES = {**globals().get("STORAGES", global_settings.STORAGES), "default": _PHOTOS}
