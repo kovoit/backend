@@ -10,7 +10,7 @@ celery~=5.5.0
 redis~=6.2.0
 Pillow~=11.3.0
 cloudinary~=1.47.0
-firebase-admin~=6.9  # notifications push (FCM)
+firebase-admin~=7.7  # notifications push (FCM)
 
 # --- Serveur de production ---
 gunicorn~=23.0.0
