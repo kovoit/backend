@@ -6,11 +6,13 @@ suspendu se connecte (alerte COMPTE_SUSPENDU du bloc `etat`) ; un admin aussi, e
 mobile (il n'ouvre pas le back-office avec ces jetons, D-71).
 """
 
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.db import transaction
 
 from apps.accounts.models import ObjetCode
+from apps.accounts.repository import user_repository
 from apps.accounts.services.codes_email import envoyer_code, normaliser_email, peut_envoyer
 from apps.accounts.services.connexion_admin import IdentifiantsInvalides
 from apps.accounts.services.jetons import emettre_jetons
@@ -29,6 +31,8 @@ def connecter(email: str, mot_de_passe: str) -> dict:
     utilisateur = authenticate(username=email, password=mot_de_passe)
     if utilisateur is None:
         raise IdentifiantsInvalides()
+    if not utilisateur.email_verifie and settings.INSCRIPTION_SANS_CODE:
+        utilisateur = user_repository.update(utilisateur, email_verifie=True)  # démo sans e-mail
     if not utilisateur.email_verifie:
         # Nouveau code hors délai de renvoi et sous le plafond ; sinon même 403 sans envoi
         if peut_envoyer(email, ObjetCode.VERIFICATION_EMAIL):

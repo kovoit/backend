@@ -40,6 +40,7 @@ def reglages_de_test(settings, tmp_path):
         **settings.STORAGES,
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     }
+    settings.INSCRIPTION_SANS_CODE = False  # parcours normal : code par e-mail
     settings.ROUTAGE_PROVIDER = "apps.routage.providers.FakeRoutingProvider"
     settings.NOTIFICATIONS_PUSH_SENDER = "apps.notifications.push.FakePushSender"
     # Namespace « CELERY » : les clés de configuration portent le préfixe
