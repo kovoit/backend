@@ -16,7 +16,7 @@ def sans_code(settings):
     settings.INSCRIPTION_SANS_CODE = True
 
 
-def test_par_defaut_le_compte_attend_son_code():
+def test_interrupteur_coupe_le_compte_attend_son_code():
     inscrire()
 
     assert User.objects.get().email_verifie is False
