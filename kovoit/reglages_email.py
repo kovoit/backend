@@ -15,6 +15,10 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Kovoit <no-reply@kovoittg.com>")
 EMAIL_TIMEOUT = 10
 
+# Démo sans e-mail : compte vérifié dès l'inscription, aucun code envoyé, et un compte resté
+# non vérifié est validé à sa connexion. À laisser à False dès que l'envoi d'e-mails marche.
+INSCRIPTION_SANS_CODE = env.bool("INSCRIPTION_SANS_CODE", default=False)
+
 # Back-office : adresse utilisée dans le lien « réinitialiser mon mot de passe »
 BACKOFFICE_URL = env("BACKOFFICE_URL", default="http://localhost:5173")
 # Durée de validité de ce lien (secondes) : 1 h

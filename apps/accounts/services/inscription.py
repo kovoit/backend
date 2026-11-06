@@ -5,6 +5,7 @@ D-78) ; un code `verification_email` part à l'adresse. Le bon code vérifie l'a
 la session (jetons `canal` = mobile).
 """
 
+from django.conf import settings
 from django.contrib.auth.models import update_last_login
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -57,11 +58,13 @@ def inscrire(*, prenom: str, nom: str, email: str, telephone: str, mot_de_passe:
                 telephone=telephone,
                 cgu_version=CGU_VERSION,
                 cgu_acceptees_le=timezone.now(),
+                email_verifie=settings.INSCRIPTION_SANS_CODE,
             )
             journaliser("compte.creer", ressource=utilisateur, acteur=utilisateur)
     except IntegrityError as exc:  # inscription simultanée de la même adresse
         raise EmailDejaUtilise() from exc
-    envoyer_code(email, OBJET)
+    if not settings.INSCRIPTION_SANS_CODE:  # démo sans e-mail : l'app se connecte aussitôt
+        envoyer_code(email, OBJET)
     return code_envoye(email)
 
 
